@@ -1,0 +1,39 @@
+
+<launch>
+
+  <!-- Load joint controller configurations from YAML file to parameter server -->
+  <rosparam file="$(find morus_control)/config/morus_control.yaml" command="load"/>
+
+  <!-- load the controllers -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+    output="screen" ns="/morus"  args="joint_state_controller
+		movable_mass_0_position_controller
+		movable_mass_1_position_controller 
+		movable_mass_2_position_controller 
+		movable_mass_3_position_controller"/>
+
+  <!-- convert joint states to TF transforms for rviz, etc -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
+    respawn="false" output="screen">
+    <remap from="/joint_states" to="/morus/joint_states"/>
+  </node>
+
+
+  <node pkg="morus_control" type="mav_state_pub.py" name="mav_state_pub" output="screen" />
+
+  <node pkg="morus_control" type="height_ctl.py" name="height_ctl" output="screen">
+        <param name="gm_attitude_ctl" value="0"/>
+        <param name="/use_sim_time" value="true"/>
+  </node>
+
+  <node pkg="morus_control" type="mass_ctl_attitude.py" name="mass_ctl_attitude" output="screen">
+        <param name="/use_sim_time" value="true"/>
+  </node>
+
+  <!--
+  <node pkg="rosbag" type="record" name="rosbag_rec" args="/morus/sensors/pose1 /morus/velocity /morus/imu /morus/euler /morus/movable_mass_0_position_controller/state /morus/movable_mass_1_position_controller/state/morus/movable_mass_1_position_controller/state /morus/movable_mass_3_position_controller/state /morus/pid_roll_rate /morus/pid_roll /morus/pid_pitch_rate /morus/pid_pitch /morus/pid_z /morus/pid_vz"
+   />
+  -->
+</launch>
+
+

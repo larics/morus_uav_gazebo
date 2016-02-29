@@ -1,0 +1,40 @@
+morus:
+  # Publish all joint states -----------------------------------
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50
+
+  # Position Controllers ---------------------------------------
+  movable_mass_0_position_controller:
+    type: effort_controllers/JointPositionController
+    joint: stick_to_movable_mass_0
+    pid: {p: 80.0, i: 100.0, d: 8.0, i_clamp_max: 100.0, i_clamp_min: -100.0}
+  movable_mass_1_position_controller:
+    type: effort_controllers/JointPositionController
+    joint: stick_to_movable_mass_1
+    pid: {p: 80.0, i: 100.0, d: 8.0, i_clamp_max: 100.0, i_clamp_min: -100.0}
+  movable_mass_2_position_controller:
+    type: effort_controllers/JointPositionController
+    joint: stick_to_movable_mass_2
+    pid: {p: 80.0, i: 100.0, d: 8.0, i_clamp_max: 100.0, i_clamp_min: -100.0}
+  movable_mass_3_position_controller:
+    type: effort_controllers/JointPositionController
+    joint: stick_to_movable_mass_3
+    pid: {p: 80.0, i: 100.0, d: 8.0, i_clamp_max: 100.0, i_clamp_min: -100.0}
+  #stick_position_controller:
+  #  type: effort_controllers/JointPositionController
+  #  joint: base_link
+  #  pid: {p: 100.0, i: 0.01, d: 10.0}
+
+  # If joint type is "revolute" for joint between stick and rotor base it is necessary to uncomment definitions for controllers bellow.
+  # It is also necessary to change klackalica_control.launch file. Two new arguments need to be passed when loading controllers:
+  # left_rotor_base_controller and right_rotor_base_controller!
+
+  #left_rotor_base_controller:
+   # type: effort_controllers/JointPositionController
+    #joint: stick_to_left_rotor_base
+    #pid: {p: 100.0, i: 0.01, d: 10.0}
+  #right_rotor_base_controller:
+   # type: effort_controllers/JointPositionController
+    #joint: stick_to_right_rotor_base
+    #pid: {p: 100.0, i: 0.01, d: 10.0}
