@@ -6,7 +6,7 @@ Joint_mass_controller:
     joint_name: Joint_mass
     joint_speed: 1.47
     motor:
-        id: 4
+        id: 8
         init: 512
         min: 0
         max: 1023
