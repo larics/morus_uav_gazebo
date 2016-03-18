@@ -1,0 +1,15 @@
+axis_linear:
+  x: 3
+  y: 4
+  z: 1
+scale_linear:
+  x: -0.25
+  y: 0.25
+  z: 0.1
+axis_angular:
+  yaw: 0
+scale_angular:
+  yaw: 0.5
+  
+enable_button: 5  # R2 shoulder button
+enable_turbo_button: -1  # R1 shoulder button
