@@ -1,5 +1,5 @@
 <launch>
-  <arg name="joy_config" default="ps3" />
+  <arg name="joy_config" default="f710" />
   <arg name="joy_dev" default="/dev/input/js0" />
   <arg name="config_filepath" default="$(find morus_joy)/config/$(arg joy_config).config.yaml" />
   
