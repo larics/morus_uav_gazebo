@@ -15,6 +15,8 @@
   <arg name="enable_ground_truth" default="true"/>
   <arg name="log_file" default="morus"/>
 
+  <arg name="joy_config" default="attack3"/>
+
 
   <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
@@ -27,6 +29,11 @@
   </include>
 
   <include file="$(find morus_gazebo)/launch/spawn_morus_multirotor.launch" />
+
+  <!-- Here starts joystick -->
+  <include file="$(find morus_joy)/launch/morus_joy_teleop.launch">
+    <arg name="joy_config" value="$(arg joy_config)" />
+  </include>
 
 </launch>
 
