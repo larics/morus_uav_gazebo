@@ -21,7 +21,7 @@
 
   <node pkg="morus_control" type="mav_state_pub.py" name="mav_state_pub" output="screen" />
 
-  <node pkg="morus_control" type="height_ctl.py" name="height_ctl" output="screen">
+  <node pkg="morus_control" type="height_yaw_ctl.py" name="height_ctl" output="screen">
         <param name="gm_attitude_ctl" value="0"/>
         <param name="/use_sim_time" value="true"/>
   </node>
