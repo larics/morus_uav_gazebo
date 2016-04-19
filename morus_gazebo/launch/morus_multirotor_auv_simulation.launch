@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+
+<launch>
+
+  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="debug" default="false"/>
+
+  <arg name="enable_logging" default="false"/>
+  <arg name="enable_ground_truth" default="true"/>
+  <arg name="log_file" default="morus"/>
+
+  <!-- Create world and spawn models -->
+  <include file="$(find morus_gazebo)/launch/morus_empty_world.launch">
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+
+  <!-- Start multirotor sim core -->
+  <!--<include file="$(find morus_gazebo)/launch/spawn_morus_multirotor.launch" />-->
+
+  <!-- Start auv sim core -->
+  <include file="$(find lauv_gazebo)/launch/sim_morus_auv.launch" />
+
+  <!-- Start multirotor control -->
+  <!--<include file="$(find morus_gazebo)/launch/spawn_morus_multirotor.launch" />-->
+
+  <!-- Start auv control -->
+  <!--<include file="$(find morus_auv_gazebo)/launch/control_morus_auv.launch" />-->
+
+</launch>
+
+
