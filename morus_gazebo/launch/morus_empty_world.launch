@@ -12,6 +12,8 @@
   <arg name="enable_logging" default="false"/>
   <arg name="enable_ground_truth" default="true"/>
   <arg name="log_file" default="morus"/>
+  <arg name="spawn_uav" default="true"/>
+  <arg name="spawn_uuv" default="true"/>
 
 
   <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
@@ -26,10 +28,10 @@
   </include>
 
   <!-- Spawn multirotor model -->
-  <include file="$(find morus_gazebo)/launch/spawn_morus_multirotor.launch" />
+  <include if="$(arg spawn_uav)" file="$(find morus_gazebo)/launch/spawn_morus_multirotor.launch" />
 
   <!-- Spawn auv model -->
-  <include file="$(find lauv_gazebo)/launch/spawn_morus_auv.launch" />
+  <include if="$(arg spawn_uuv)" file="$(find lauv_gazebo)/launch/spawn_morus_auv.launch" />
 
 </launch>
 
