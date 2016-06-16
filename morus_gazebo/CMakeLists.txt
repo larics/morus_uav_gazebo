@@ -4,10 +4,41 @@ project(morus_gazebo)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS)
+find_package(catkin REQUIRED COMPONENTS
+	roscpp
+	std_msgs
+	geometry_msgs
+	genmsg
+	sensor_msgs
+	message_generation
+	gazebo_ros
+	gazebo_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
+##########################
+## Gazebo related stuff ##
+##########################
+
+include (FindPkgConfig)
+if (PKG_CONFIG_FOUND)
+  pkg_check_modules(XML libxml-2.0)
+  pkg_check_modules(OGRE OGRE)
+  pkg_check_modules(OGRE-Terrain OGRE-Terrain)
+else()
+  message(FATAL_ERROR "pkg-config is required; please install it")
+endif()
+
+# Depend on system install of Gazebo
+find_package(gazebo REQUIRED)
+find_package(Boost REQUIRED COMPONENTS thread)
+
+execute_process(COMMAND
+  pkg-config --variable=plugindir OGRE
+  OUTPUT_VARIABLE OGRE_PLUGIN_PATH
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -96,11 +127,11 @@ find_package(catkin REQUIRED COMPONENTS)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES morus_gazebo
-#  CATKIN_DEPENDS gazebo roscpp rospy
-#  DEPENDS system_lib
-)
+INCLUDE_DIRS include launch plugins worlds
+	LIBRARIES morus_gazebo
+	CATKIN_DEPENDS geometry_msgs roscpp std_msgs message_runtime sensor_msgs
+	DEPENDS system_lib gazebo_ros 
+	)
 
 ###########
 ## Build ##
@@ -135,6 +166,12 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
+link_directories(${GAZEBO_LIBRARY_DIRS} ${OGRE_LIBRARY_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${GAZEBO_INCLUDE_DIRS} ${OGRE_INCLUDE_DIRS} ${OGRE-Terrain_INCLUDE_DIRS})
+
+
+add_library(${PROJECT_NAME} plugins/simple_world_plugin.cpp)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 #############
 ## Install ##
 #############
