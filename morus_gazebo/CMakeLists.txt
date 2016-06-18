@@ -12,7 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
 	sensor_msgs
 	message_generation
 	gazebo_ros
-	gazebo_msgs)
+	gazebo_msgs
+	morus_uav_ros_msgs)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -129,7 +130,7 @@ execute_process(COMMAND
 catkin_package(
 INCLUDE_DIRS include launch plugins worlds
 	LIBRARIES morus_gazebo
-	CATKIN_DEPENDS geometry_msgs roscpp std_msgs message_runtime sensor_msgs
+	CATKIN_DEPENDS geometry_msgs roscpp std_msgs message_runtime sensor_msgs morus_uav_ros_msgs
 	DEPENDS system_lib gazebo_ros 
 	)
 
@@ -172,6 +173,12 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${GAZEBO
 
 add_library(${PROJECT_NAME} plugins/simple_world_plugin.cpp)
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+#add_library(${PROJECT_NAME}_get_pose plugins/get_pose/get_pose.cpp)
+#target_link_libraries(${PROJECT_NAME}_get_pose  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+add_library(${PROJECT_NAME}_battery_status plugins/battery_status/BatteryStatus.cpp)
+target_link_libraries(${PROJECT_NAME}_battery_status  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 #############
 ## Install ##
 #############

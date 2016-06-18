@@ -41,6 +41,11 @@
       <rpyOffsets>0.0 0.0 0.0</rpyOffsets> <!-- (Vector3): if non-zero, used to calculate accelOffset and headingOffset so that resulting roll, pitch and yaw errors correspond to this values when the platform is leveled (for compatibility with gazebo_plugins) -->
     </plugin>
   </gazebo>
+  
+  <!-- Mount my first plugin-->
+  <gazebo>
+    <plugin filename="libmorus_gazebo_battery_status.so" name="gazeboget_pose"/>
+  </gazebo>
 
    <!-- Mount first generic pose sensor-->
   <xacro:odometry_plugin_macro
