@@ -42,11 +42,27 @@
     </plugin>
   </gazebo>
   
-  <!-- Mount my first plugin-->
+  <!-- Start publishing battery status msgs-->
   <gazebo>
-    <plugin filename="libmorus_gazebo_battery_status.so" name="gazeboget_pose"/>
+    <plugin filename="libmorus_gazebo_battery_status.so" name="battery_status_11">
+      <batteryID> 11 </batteryID>
+    </plugin>
   </gazebo>
-
+  <gazebo>
+    <plugin filename="libmorus_gazebo_battery_status.so" name="battery_status_12">
+      <batteryID> 12 </batteryID>
+    </plugin>
+  </gazebo>
+  <gazebo>
+    <plugin filename="libmorus_gazebo_battery_status.so" name="battery_status_13">
+      <batteryID> 13 </batteryID>
+    </plugin>
+  </gazebo>
+  <gazebo>
+    <plugin filename="libmorus_gazebo_battery_status.so" name="battery_status_14">
+      <batteryID> 14 </batteryID>
+    </plugin>
+  </gazebo>
    <!-- Mount first generic pose sensor-->
   <xacro:odometry_plugin_macro
     namespace="$(arg name)"

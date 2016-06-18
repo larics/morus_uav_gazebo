@@ -23,7 +23,7 @@ namespace gazebo
 
         ros::CallbackQueue callback_queue_;
         ros::NodeHandle* rosnode_;
-        std::string robot_namespace_, battery_topic_;
+        std::string robot_namespace_, battery_topic_, battery_ID_;
         ros::Publisher battery_publisher_;
 
         morus_uav_ros_msgs::BatteryStatus battery_status_msg;

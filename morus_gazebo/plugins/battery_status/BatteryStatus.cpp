@@ -28,18 +28,29 @@ void BatteryStatus::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     this->robot_namespace_ = "";
     if(_sdf->HasElement("robotNamespace")) this->robot_namespace_ = _sdf->GetElement("robotNamespace")->Get<std::string>();
     else ROS_INFO("BatteryStatus plugin missing <robotNamespace>, defaults to \"%s\"", robot_namespace_.c_str());
-
-    this->battery_topic_ = this->model->GetName() + "/BatteryStatus";
-    if (!_sdf->HasElement("batteryTopic"))
+    
+    this->battery_ID_ ="";
+    if(_sdf->HasElement("batteryID")) 
     {
-        ROS_WARN("BatteryStatus plugin (ns = %s) missing <batteryTopic>, defaults to \"%s\"", robot_namespace_.c_str(), this->battery_topic_.c_str());
+      this->battery_ID_ = _sdf->GetElement("batteryID")->Get<std::string>();
+      this->battery_topic_ = this->model->GetName() + "/battery/"+ this->battery_ID_+ "/Status";
     }
-    else this->battery_topic_ = _sdf->GetElement("batteryTopic")->Get<std::string>();
+    else
+    {
+      ROS_INFO("BatteryStatus plugin missing <batteryID>, defaults to 0");
+      this->battery_topic_ = this->model->GetName() + "/battery/0/Status";
+    }
+
+    //if (!_sdf->HasElement("batteryTopic"))
+    //{
+    //    ROS_WARN("BatteryStatus plugin (ns = %s) missing <batteryTopic>, defaults to \"%s\"", robot_namespace_.c_str(), this->battery_topic_.c_str());
+    //}
+    //else this->battery_topic_ = _sdf->GetElement("batteryTopic")->Get<std::string>();
 
     // Ensure that ROS has been initialized
     if (!ros::isInitialized()) 
     {
-      ROS_FATAL_STREAM("PlanarMovePlugin (ns = " << robot_namespace_
+      ROS_FATAL_STREAM("BatteryStatusPlugin (ns = " << robot_namespace_
         << "). A ROS node for Gazebo has not been initialized, "
         << "unable to load plugin. Load the Gazebo system plugin "
         << "'libgazebo_ros_api_plugin.so' in the gazebo_ros package)");
@@ -51,7 +62,6 @@ void BatteryStatus::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     // Publisher
     if (!battery_topic_.empty())
     {
-        //printf("Stvoril sam publishera!!\n");
         ros::AdvertiseOptions ops = ros::AdvertiseOptions::create<morus_uav_ros_msgs::BatteryStatus>(
             battery_topic_, 1,
             ros::SubscriberStatusCallback(), ros::SubscriberStatusCallback(), ros::VoidConstPtr(), &callback_queue_);
@@ -73,9 +83,10 @@ void BatteryStatus::OnUpdate()
     this->battery_status_msg.header.stamp.nsec = cur_time.nsec;
 
     this->battery_status_msg.can_timestamp = 1;
-    this->battery_status_msg.battery_id = 11;           //11-front arm, 12-right arm, 13-back arm, 14-left arm
+    this->battery_status_msg.battery_id = atoi(this->battery_ID_.c_str());           //11-front arm, 12-right arm, 13-back arm, 14-left arm
     this->battery_status_msg.voltage = 12;              // battery voltage (V)
     this->battery_status_msg.current =100;		// battery current (A)
+    this->battery_status_msg.percentage = 99;		// battery percentage
 
     
 

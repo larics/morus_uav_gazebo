@@ -171,8 +171,8 @@ link_directories(${GAZEBO_LIBRARY_DIRS} ${OGRE_LIBRARY_DIRS})
 include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${GAZEBO_INCLUDE_DIRS} ${OGRE_INCLUDE_DIRS} ${OGRE-Terrain_INCLUDE_DIRS})
 
 
-add_library(${PROJECT_NAME} plugins/simple_world_plugin.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+#add_library(${PROJECT_NAME} plugins/simple_world_plugin.cpp)
+#target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 #add_library(${PROJECT_NAME}_get_pose plugins/get_pose/get_pose.cpp)
 #target_link_libraries(${PROJECT_NAME}_get_pose  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
