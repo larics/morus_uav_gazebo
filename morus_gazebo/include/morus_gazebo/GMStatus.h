@@ -8,6 +8,7 @@
 #include <boost/bind.hpp>
 
 #include <morus_uav_ros_msgs/GmStatus.h>
+#include <morus_uav_ros_msgs/GmIgnition.h>
 
 namespace gazebo
 {
@@ -20,13 +21,16 @@ namespace gazebo
         physics::ModelPtr model;
         physics::WorldPtr world;
         event::ConnectionPtr updateConnection;
-
+	
         ros::CallbackQueue callback_queue_;
         ros::NodeHandle* rosnode_;
         std::string robot_namespace_, gm_topic_, gm_ID_;
         ros::Publisher gm_publisher_;
 
         morus_uav_ros_msgs::GmStatus gm_status_msg;
+	
+	ros::Subscriber OnGMIgnitionMsg_subscriber_;
+	void OnGMIgnitionMsg(const morus_uav_ros_msgs::GmIgnitionConstPtr& msg);
 
         void OnUpdate();
     };

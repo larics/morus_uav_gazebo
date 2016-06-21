@@ -52,6 +52,12 @@ void GMStatus::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     }
 
     this->rosnode_ = new ros::NodeHandle(this->robot_namespace_);
+    
+    // Subscriber
+    ros::SubscribeOptions ops = ros::SubscribeOptions::create<morus_uav_ros_msgs::GmIgnition>("morus/GmIgnition", 1,
+											  boost::bind(&GMStatus::OnGMIgnitionMsg, this, _1),
+											ros::VoidPtr(), &callback_queue_);
+    OnGMIgnitionMsg_subscriber_ = this->rosnode_->subscribe(ops);
 
     // Publisher
     if (!gm_topic_.empty())
@@ -64,6 +70,12 @@ void GMStatus::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 
     this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&GMStatus::OnUpdate, this));
 }
+
+void GMStatus::OnGMIgnitionMsg(const morus_uav_ros_msgs::GmIgnitionConstPtr& msg)
+{
+	ROS_INFO("Received GMIgnition message");
+}
+
 
 void GMStatus::OnUpdate()
 {
@@ -78,7 +90,7 @@ void GMStatus::OnUpdate()
 
     this->gm_status_msg.can_timestamp = 1;
     this->gm_status_msg.force_M = 1.0;		        // measured force in Newton
-    this->gm_status_msg.speed_M	=2.0;	        // measured rotational velocity radian per second
+    this->gm_status_msg.speed_M	=2.0;	        	// measured rotational velocity radian per second
     this->gm_status_msg.temperature_M = 35.5;	    	// measured temperature in Celsius degree
     this->gm_status_msg.fuel_level_M = 0.1; 	    	// measured fuel level in percentage
 
@@ -88,7 +100,7 @@ void GMStatus::OnUpdate()
     
     
 
-    gm_publisher_.publish(gm_status_msg);
+    gm_publisher_.publish(gm_status_msg);		// publish status msg to ROS
 
 
 }
