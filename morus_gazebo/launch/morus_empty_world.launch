@@ -11,7 +11,7 @@
 
   <arg name="enable_logging" default="false"/>
   <arg name="enable_ground_truth" default="true"/>
-  <arg name="log_file" default="morus"/>
+  <arg name="log_file" default="morus_uav"/>
   <arg name="spawn_uav" default="true"/>
   <arg name="spawn_uuv" default="true"/>
 

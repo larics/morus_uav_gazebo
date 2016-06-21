@@ -34,12 +34,16 @@ void GMStatus::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     {
       this->gm_ID_ = _sdf->GetElement("gmID")->Get<std::string>();
       this->gm_topic_ = this->model->GetName() + "/gm/"+ this->gm_ID_+ "/Status";
+      this->gm_ignition_topic_ = this->model->GetName() + "/gm/"+ this->gm_ID_+ "/GmIgnition";
     }
     else
     {
       ROS_INFO("GMStatus plugin missing <gmID>, defaults to 0");
       this->gm_topic_ = this->model->GetName() + "/gm/0/Status";
     }
+    
+    if(_sdf->HasElement("FuelLevelTimeout")) this->fuel_level_timeout_ = _sdf->GetElement("FuelLevelTimeout")->Get<float>();
+    else this->fuel_level_timeout_ = 10.0;
 
     // Ensure that ROS has been initialized
     if (!ros::isInitialized()) 
@@ -54,7 +58,7 @@ void GMStatus::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     this->rosnode_ = new ros::NodeHandle(this->robot_namespace_);
     
     // Subscriber
-    ros::SubscribeOptions ops = ros::SubscribeOptions::create<morus_uav_ros_msgs::GmIgnition>("morus/GmIgnition", 1,
+    ros::SubscribeOptions ops = ros::SubscribeOptions::create<morus_uav_ros_msgs::GmIgnition>(this->gm_ignition_topic_, 1,
 											  boost::bind(&GMStatus::OnGMIgnitionMsg, this, _1),
 											ros::VoidPtr(), &callback_queue_);
     OnGMIgnitionMsg_subscriber_ = this->rosnode_->subscribe(ops);
@@ -67,6 +71,9 @@ void GMStatus::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
             ros::SubscriberStatusCallback(), ros::SubscriberStatusCallback(), ros::VoidConstPtr(), &callback_queue_);
         gm_publisher_ = this->rosnode_->advertise(ops);
     }
+    
+    // Initialize everything
+    this->ignition_S = 0;
 
     this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&GMStatus::OnUpdate, this));
 }
@@ -74,6 +81,7 @@ void GMStatus::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 void GMStatus::OnGMIgnitionMsg(const morus_uav_ros_msgs::GmIgnitionConstPtr& msg)
 {
 	ROS_INFO("Received GMIgnition message");
+	this->ignition_S = msg->ignition;
 }
 
 
@@ -92,9 +100,9 @@ void GMStatus::OnUpdate()
     this->gm_status_msg.force_M = 1.0;		        // measured force in Newton
     this->gm_status_msg.speed_M	=2.0;	        	// measured rotational velocity radian per second
     this->gm_status_msg.temperature_M = 35.5;	    	// measured temperature in Celsius degree
-    this->gm_status_msg.fuel_level_M = 0.1; 	    	// measured fuel level in percentage
+    this->gm_status_msg.fuel_level_M = exp(-cur_time.sec/this->fuel_level_timeout_); 	    	// measured fuel level in percentage
 
-    this->gm_status_msg.ignition_S = 1;             	// setted ignition flag (0-off, 1-on)
+    this->gm_status_msg.ignition_S = this->ignition_S;             	// setted ignition flag (0-off, 1-on)
     this->gm_status_msg.starter_ppm_S  = 1000;        	// setted ppm value for e-starter (range 1000-1900)
     this->gm_status_msg.speed_S = 1300;		        // setted reference for gm velocity in radian per second
     

@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<robot name="morus" xmlns:xacro="http://ros.org/wiki/xacro">
+<robot name="morus_uav" xmlns:xacro="http://ros.org/wiki/xacro">
   <!--
   It seems that the xacro:property does not allow to use substitution args. Therefore, instead xacro parameter ${namespace}, subsitution argument is used $(arg name). This is 
   <xacro:property name="namespace" value="$(arg name)" />
@@ -45,42 +45,43 @@
   <!-- Start publishing battery status msgs-->
   <gazebo>
     <plugin filename="libmorus_gazebo_battery_status.so" name="battery_status_11">
-      <batteryID> 11 </batteryID>
+      <batteryID> 1 </batteryID>
     </plugin>
   </gazebo>
   <gazebo>
     <plugin filename="libmorus_gazebo_battery_status.so" name="battery_status_12">
-      <batteryID> 12 </batteryID>
+      <batteryID> 2 </batteryID>
     </plugin>
   </gazebo>
   <gazebo>
     <plugin filename="libmorus_gazebo_battery_status.so" name="battery_status_13">
-      <batteryID> 13 </batteryID>
+      <batteryID> 3 </batteryID>
     </plugin>
   </gazebo>
   <gazebo>
     <plugin filename="libmorus_gazebo_battery_status.so" name="battery_status_14">
-      <batteryID> 14 </batteryID>
+      <batteryID> 4 </batteryID>
     </plugin>
   </gazebo>
   <!-- Start publishing GM status msgs-->
     <gazebo>
     <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_1">
       <gmID> 1 </gmID>
+      <FuelLevelTimeout>100</FuelLevelTimeout>
     </plugin>
   </gazebo>
   <gazebo>
-    <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_22">
+    <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_2">
       <gmID> 2 </gmID>
     </plugin>
   </gazebo>
   <gazebo>
-    <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_13">
+    <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_3">
       <gmID> 3 </gmID>
     </plugin>
   </gazebo>
   <gazebo>
-    <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_14">
+    <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_4">
       <gmID> 4 </gmID>
     </plugin>
   </gazebo>
