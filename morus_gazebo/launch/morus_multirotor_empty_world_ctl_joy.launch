@@ -10,6 +10,7 @@
   <arg name="gui" default="true"/>
   <arg name="headless" default="false"/>
   <arg name="debug" default="false"/>
+  <arg name="ns_" default = "morus_uav" />
 
   <arg name="enable_logging" default="false"/>
   <arg name="enable_ground_truth" default="true"/>
@@ -28,14 +29,18 @@
     <arg name="headless" value="$(arg headless)"/>
   </include>
 
-  <include file="$(find morus_gazebo)/launch/spawn_morus_multirotor.launch" />
+  <include file="$(find morus_gazebo)/launch/spawn_morus_multirotor.launch" >
+  </include>
   
   <!-- start control stack -->
-  <include file="$(find morus_control)/launch/morus_control.launch"/>
+  <include file="$(find morus_control)/launch/morus_control.launch">
+    <arg name="ns_" value="$(arg ns_)" />
+  </include>
 
   <!-- Here starts joystick -->
   <include file="$(find morus_joy)/launch/morus_joy_teleop.launch">
     <arg name="joy_config" value="$(arg joy_config)" />
+    <arg name="ns_" value="$(arg ns_)" />
   </include>
 
 </launch>

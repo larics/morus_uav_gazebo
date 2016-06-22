@@ -19,17 +19,17 @@ class AttitudeControl:
     Class implements MAV attitude control (roll, pitch, yaw). Two PIDs in cascade are
     used for each degree of freedom.
     Subscribes to:
-        /morus/imu                - used to extract attitude and attitude rate of the vehicle
-        /morus/mot_vel_ref        - used to receive referent motor velocity from the height controller
-        /morus/euler_ref          - used to set the attitude referent (useful for testing controllers)
+        imu                - used to extract attitude and attitude rate of the vehicle
+        mot_vel_ref        - used to receive referent motor velocity from the height controller
+        euler_ref          - used to set the attitude referent (useful for testing controllers)
     Publishes:
-        /morus/command/motors     - referent motor velocities sent to each motor controller
-        /morus/pid_roll           - publishes PID-roll data - referent value, measured value, P, I, D and total component (useful for tuning params)
-        /morus/pid_roll_rate      - publishes PID-roll_rate data - referent value, measured value, P, I, D and total component (useful for tuning params)
-        /morus/pid_pitch          - publishes PID-pitch data - referent value, measured value, P, I, D and total component (useful for tuning params)
-        /morus/pid_pitch_rate     - publishes PID-pitch_rate data - referent value, measured value, P, I, D and total component (useful for tuning params)
-        /morus/pid_yaw            - publishes PID-yaw data - referent value, measured value, P, I, D and total component (useful for tuning params)
-        /morus/pid_yaw_rate       - publishes PID-yaw_rate data - referent value, measured value, P, I, D and total component (useful for tuning params)
+        command/motors     - referent motor velocities sent to each motor controller
+        pid_roll           - publishes PID-roll data - referent value, measured value, P, I, D and total component (useful for tuning params)
+        pid_roll_rate      - publishes PID-roll_rate data - referent value, measured value, P, I, D and total component (useful for tuning params)
+        pid_pitch          - publishes PID-pitch data - referent value, measured value, P, I, D and total component (useful for tuning params)
+        pid_pitch_rate     - publishes PID-pitch_rate data - referent value, measured value, P, I, D and total component (useful for tuning params)
+        pid_yaw            - publishes PID-yaw data - referent value, measured value, P, I, D and total component (useful for tuning params)
+        pid_yaw_rate       - publishes PID-yaw_rate data - referent value, measured value, P, I, D and total component (useful for tuning params)
 
     Dynamic reconfigure is used to set controllers param online.
     '''
@@ -100,21 +100,21 @@ class AttitudeControl:
 
         self.t_old = 0
 
-        rospy.Subscriber('/morus/imu', Imu, self.ahrs_cb)
-        rospy.Subscriber('/morus/mot_vel_ref', Float32, self.mot_vel_ref_cb)
-        rospy.Subscriber('/morus/euler_ref', Vector3, self.euler_ref_cb)
+        rospy.Subscriber('imu', Imu, self.ahrs_cb)
+        rospy.Subscriber('mot_vel_ref', Float32, self.mot_vel_ref_cb)
+        rospy.Subscriber('euler_ref', Vector3, self.euler_ref_cb)
         rospy.Subscriber('/clock', Clock, self.clock_cb)
 
-        self.pub_mass0 = rospy.Publisher('/morus/movable_mass_0_position_controller/command', Float64, queue_size=1)
-        self.pub_mass1 = rospy.Publisher('/morus/movable_mass_1_position_controller/command', Float64, queue_size=1)
-        self.pub_mass2 = rospy.Publisher('/morus/movable_mass_2_position_controller/command', Float64, queue_size=1)
-        self.pub_mass3 = rospy.Publisher('/morus/movable_mass_3_position_controller/command', Float64, queue_size=1)
-        self.pub_pid_roll = rospy.Publisher('/morus/pid_roll', PIDController, queue_size=1)
-        self.pub_pid_roll_rate = rospy.Publisher('/morus/pid_roll_rate', PIDController, queue_size=1)
-        self.pub_pid_pitch = rospy.Publisher('/morus/pid_pitch', PIDController, queue_size=1)
-        self.pub_pid_pitch_rate = rospy.Publisher('/morus/pid_pitch_rate', PIDController, queue_size=1)
-        self.pub_pid_yaw = rospy.Publisher('/morus/pid_yaw', PIDController, queue_size=1)
-        self.pub_pid_yaw_rate = rospy.Publisher('/morus/pid_yaw_rate', PIDController, queue_size=1)
+        self.pub_mass0 = rospy.Publisher('movable_mass_0_position_controller/command', Float64, queue_size=1)
+        self.pub_mass1 = rospy.Publisher('movable_mass_1_position_controller/command', Float64, queue_size=1)
+        self.pub_mass2 = rospy.Publisher('movable_mass_2_position_controller/command', Float64, queue_size=1)
+        self.pub_mass3 = rospy.Publisher('movable_mass_3_position_controller/command', Float64, queue_size=1)
+        self.pub_pid_roll = rospy.Publisher('pid_roll', PIDController, queue_size=1)
+        self.pub_pid_roll_rate = rospy.Publisher('pid_roll_rate', PIDController, queue_size=1)
+        self.pub_pid_pitch = rospy.Publisher('pid_pitch', PIDController, queue_size=1)
+        self.pub_pid_pitch_rate = rospy.Publisher('pid_pitch_rate', PIDController, queue_size=1)
+        self.pub_pid_yaw = rospy.Publisher('pid_yaw', PIDController, queue_size=1)
+        self.pub_pid_yaw_rate = rospy.Publisher('pid_yaw_rate', PIDController, queue_size=1)
         self.cfg_server = Server(MavAttitudeCtlParamsConfig, self.cfg_callback)
 
     def run(self):

@@ -26,13 +26,13 @@ class Commander():
     # Must have __init__(self) function for a class
     def __init__(self):
         # Create a publisher for roll pitch yaw cmnds
-        self.pub = rospy.Publisher('morus/euler_ref', Vector3, queue_size=1)
-        self.pub2 = rospy.Publisher('morus/pos_ref', Vector3, queue_size=1)
+        self.pub = rospy.Publisher('euler_ref', Vector3, queue_size=1)
+        self.pub2 = rospy.Publisher('pos_ref', Vector3, queue_size=1)
         # Initialize message variables.
 
         # Create a subscriber for color msg
         rospy.Subscriber("cmd_vel", Twist, self.cmd_vel_callback)
-        rospy.Subscriber("morus/position", PointStamped, self.position_callback)
+        rospy.Subscriber("position", PointStamped, self.position_callback)
         rate = rospy.Rate(1) # 1hz
         # Main while loop.
         while not rospy.is_shutdown():

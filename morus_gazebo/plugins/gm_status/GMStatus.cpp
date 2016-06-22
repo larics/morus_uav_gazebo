@@ -34,7 +34,7 @@ void GMStatus::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     {
       this->gm_ID_ = _sdf->GetElement("gmID")->Get<std::string>();
       this->gm_topic_ = this->model->GetName() + "/gm/"+ this->gm_ID_+ "/Status";
-      this->gm_ignition_topic_ = this->model->GetName() + "/gm/"+ this->gm_ID_+ "/GmIgnition";
+      this->gm_ignition_topic_ = this->model->GetName() + "/gm/" + "/GmIgnition";
     }
     else
     {
@@ -81,7 +81,8 @@ void GMStatus::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 void GMStatus::OnGMIgnitionMsg(const morus_uav_ros_msgs::GmIgnitionConstPtr& msg)
 {
 	ROS_INFO("Received GMIgnition message");
-	this->ignition_S = msg->ignition;
+	if (msg->motor_id == std::atoi(this->gm_ID_.c_str()) || msg->motor_id == 0)
+	  this->ignition_S = msg->ignition;
 }
 
 

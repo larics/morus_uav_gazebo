@@ -17,15 +17,15 @@ class HeightControl:
     '''
     Class implements ROS node for cascade (z, vz) PID control for MAV height.
     Subscribes to:
-        /morus/pose       - used to extract z-position of the vehicle
-        /morus/velocity   - used to extract vz of the vehicle
-        /morus/pos_ref    - used to set the reference for z-position
-        /morus/vel_ref    - used to set the reference for vz-position (useful for testing velocity controller)
+        pose       - used to extract z-position of the vehicle
+        velocity   - used to extract vz of the vehicle
+        pos_ref    - used to set the reference for z-position
+        vel_ref    - used to set the reference for vz-position (useful for testing velocity controller)
 
     Publishes:
-        /morus/mot_vel_ref  - referent value for thrust in terms of motor velocity (rad/s)
-        /morus/pid_z        - publishes PID-z data - referent value, measured value, P, I, D and total component (useful for tuning params)
-        /morus/pid_vz        - publishes PID-vz data - referent value, measured value, P, I, D and total component (useful for tuning params)
+        mot_vel_ref  - referent value for thrust in terms of motor velocity (rad/s)
+        pid_z        - publishes PID-z data - referent value, measured value, P, I, D and total component (useful for tuning params)
+        pid_vz        - publishes PID-vz data - referent value, measured value, P, I, D and total component (useful for tuning params)
 
     Dynamic reconfigure is used to set controller params online.
     '''
@@ -86,17 +86,17 @@ class HeightControl:
 
         self.t_old = 0
 
-        rospy.Subscriber('/morus/pose_with_covariance', PoseWithCovarianceStamped, self.pose_cb)
-        rospy.Subscriber('/morus/velocity', TwistStamped, self.vel_cb)
-        rospy.Subscriber('/morus/vel_ref', Vector3, self.vel_ref_cb)
-        rospy.Subscriber('/morus/pos_ref', Vector3, self.pos_ref_cb)
-        rospy.Subscriber('/morus/euler_ref', Vector3, self.euler_ref_cb)
-        rospy.Subscriber('/morus/imu', Imu, self.ahrs_cb)
+        rospy.Subscriber('pose_with_covariance', PoseWithCovarianceStamped, self.pose_cb)
+        rospy.Subscriber('velocity', TwistStamped, self.vel_cb)
+        rospy.Subscriber('vel_ref', Vector3, self.vel_ref_cb)
+        rospy.Subscriber('pos_ref', Vector3, self.pos_ref_cb)
+        rospy.Subscriber('euler_ref', Vector3, self.euler_ref_cb)
+        rospy.Subscriber('imu', Imu, self.ahrs_cb)
 
-        self.pub_pid_z = rospy.Publisher('/morus/pid_z', PIDController, queue_size=1)
-        self.pub_pid_vz = rospy.Publisher('/morus/pid_vz', PIDController, queue_size=1)
-        self.pub_pid_yaw_rate = rospy.Publisher('/morus/pid_yaw_rate', PIDController, queue_size=1)
-        self.mot_ref_pub = rospy.Publisher('/morus/mot_vel_ref', Float32, queue_size=1)
+        self.pub_pid_z = rospy.Publisher('pid_z', PIDController, queue_size=1)
+        self.pub_pid_vz = rospy.Publisher('pid_vz', PIDController, queue_size=1)
+        self.pub_pid_yaw_rate = rospy.Publisher('pid_yaw_rate', PIDController, queue_size=1)
+        self.mot_ref_pub = rospy.Publisher('mot_vel_ref', Float32, queue_size=1)
         self.pub_mot = rospy.Publisher('/gazebo/command/motor_speed', Actuators, queue_size=1)
         self.cfg_server = Server(MavZCtlParamsConfig, self.cfg_callback)
         self.ros_rate = rospy.Rate(10)

@@ -8,7 +8,7 @@
 
   <gazebo>
     <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
-      <robotNamespace>/morus</robotNamespace>
+      <robotNamespace>/morus_uav</robotNamespace>
       <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
     </plugin>
   </gazebo>
@@ -88,7 +88,7 @@
   
   <!-- Mount first generic pose sensor-->
   <xacro:odometry_plugin_macro
-    namespace="$(arg name)"
+    namespace="morus_uav"
     odometry_sensor_suffix="1"
     parent_link="base_link"
     pose_topic="pose"

@@ -74,13 +74,13 @@ class HeightControl:
 
         self.t_old = 0
 
-        rospy.Subscriber('/morus/pose_with_covariance', PoseWithCovarianceStamped, self.pose_cb)
-        rospy.Subscriber('/morus/velocity', TwistStamped, self.vel_cb)
-        rospy.Subscriber('/morus/vel_ref', Vector3, self.vel_ref_cb)
-        rospy.Subscriber('/morus/pos_ref', Vector3, self.pos_ref_cb)
-        self.pub_pid_z = rospy.Publisher('/morus/pid_z', PIDController, queue_size=1)
-        self.pub_pid_vz = rospy.Publisher('/morus/pid_vz', PIDController, queue_size=1)
-        self.mot_ref_pub = rospy.Publisher('/morus/mot_vel_ref', Float32, queue_size=1)
+        rospy.Subscriber('pose_with_covariance', PoseWithCovarianceStamped, self.pose_cb)
+        rospy.Subscriber('velocity', TwistStamped, self.vel_cb)
+        rospy.Subscriber('vel_ref', Vector3, self.vel_ref_cb)
+        rospy.Subscriber('pos_ref', Vector3, self.pos_ref_cb)
+        self.pub_pid_z = rospy.Publisher('pid_z', PIDController, queue_size=1)
+        self.pub_pid_vz = rospy.Publisher('pid_vz', PIDController, queue_size=1)
+        self.mot_ref_pub = rospy.Publisher('mot_vel_ref', Float32, queue_size=1)
         self.pub_mot = rospy.Publisher('/gazebo/command/motor_speed', Actuators, queue_size=1)
         self.cfg_server = Server(MavZCtlParamsConfig, self.cfg_callback)
         self.ros_rate = rospy.Rate(10)
