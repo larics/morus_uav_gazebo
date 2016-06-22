@@ -67,7 +67,7 @@
     <gazebo>
     <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_1">
       <gmID> 1 </gmID>
-      <FuelLevelTimeout>100</FuelLevelTimeout>
+      <FuelLevelTimeout>50</FuelLevelTimeout>
     </plugin>
   </gazebo>
   <gazebo>
