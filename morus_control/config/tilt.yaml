@@ -4,9 +4,9 @@ Joint_mass_controller:
         module: joint_position_controller
         type: JointPositionController
     joint_name: Joint_mass
-    joint_speed: 1.47
+    joint_speed: 10
     motor:
-        id: 8
+        id: 12
         init: 512
         min: 0
         max: 1023

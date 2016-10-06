@@ -12,13 +12,13 @@ class Simulator2Model():
 
         #Initialization of the class
         self.min_pose_dist = -0.2 #min in simulator
-        self.min_pose_angle = 1.8 #min angle of dynamixel
+        self.min_pose_angle = -2.6 #min angle of dynamixel
         self.max_pose_dist = 0.2
-        self.max_pose_angle = -2.0
+        self.max_pose_angle = 2.6
 
         #set limits
-        self.min_angle = -2.0
-        self.max_angle = 1.8
+        self.min_angle = -2.6  
+        self.max_angle = 2.6
 
         #calculate coefs for angle=k*pose + l 
         #y=-8.75*x - 0.85
