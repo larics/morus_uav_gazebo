@@ -1,4 +1,4 @@
-#include <morus_gazebo/BatteryStatus.h>
+#include <morus_gazebo/batteryStatus.h>
 
 #include <string>
 

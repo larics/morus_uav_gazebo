@@ -1,4 +1,4 @@
-#include <morus_gazebo/GMStatus.h>
+#include <morus_gazebo/gmStatus.h>
 
 #include <string>
 
