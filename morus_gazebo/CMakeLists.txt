@@ -179,6 +179,9 @@ target_link_libraries(${PROJECT_NAME}_gm_status ${roscpp_LIBRARIES} ${catkin_LIB
 
 add_library(${PROJECT_NAME}_battery_status plugins/battery_status/batteryStatus.cpp)
 target_link_libraries(${PROJECT_NAME}_battery_status  ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+add_library(${PROJECT_NAME}_base_plugin plugins/base_plugin/basePlugin.cpp)
+target_link_libraries(${PROJECT_NAME}_base_plugin  ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 #############
 ## Install ##
 #############
