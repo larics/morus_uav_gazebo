@@ -10,7 +10,7 @@
   <arg name="enable_ground_truth" default="true"/>
   <arg name="log_file" default="morus_log"/>
   <arg name="exclude_floor_link_from_collision_check" default="ground_plane::link"/>
-  <arg name="model" value="$(find morus_description)/urdf/morus.gazebo.xacro" />
+  <arg name="model" value="$(find morus_description)/urdf/morus.base.gazebo.xacro" />
 
   <!-- send the robot XML to param server -->
   <param name="robot_description_$(arg name)" command="
@@ -25,7 +25,7 @@
   <param name="tf_prefix" type="string" value="$(arg tf_prefix)" />
 
   <!-- push robot_description to factory and spawn robot in gazebo -->
-  <node name="spawn_robot" pkg="gazebo_ros" type="spawn_model"
+  <node name="spawn_robot_$(arg name)" pkg="gazebo_ros" type="spawn_model"
    args="-param /robot_description_$(arg name)
          -urdf
          -x $(arg x)

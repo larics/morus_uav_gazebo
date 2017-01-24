@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+
+<robot name="morus" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!-- Properties -->
+  <xacro:property name="rotor_velocity_slowdown_sim" value="10" />
+  <xacro:property name="mesh_file" value="MORUS_UAV_without_mass.dae" />
+  <xacro:property name="mesh_file_mass" value="MORUS_mass.dae" />
+  <xacro:property name="mass" value="30" />  <!-- [kg] -->
+
+  <xacro:property name="body_width" value="0.3" /> <!-- 0.1 [m] -->
+  <xacro:property name="body_height" value="0.25" /> <!--0.2 [m] -->
+  <xacro:property name="mass_rotor" value="0.2" /> <!-- [kg] -->
+  <xacro:property name="arm_length" value="0.515" /> <!-- [m] -->
+  <xacro:property name="arm_offset" value="0.1" /> <!-- [m] -->
+  <xacro:property name="propeler_offset" value="0.325" /> <!-- [m] -->
+  
+  <xacro:property name="rotor_offset_top" value="0.037" /> <!-- [m] -->
+  <xacro:property name="radius_rotor" value="0.33" /> <!-- [m] -->
+  <xacro:property name="motor_constant" value="0.000456874" /> <!-- [kg*m/s^2] -->
+  <xacro:property name="moment_constant" value="0.01" /> <!-- [m] -->
+  <xacro:property name="time_constant" value="0.125" /> <!-- [s] -->s ti
+  <xacro:property name="max_rot_velocity" value="838" /> <!-- [rad/s] -->
+
+  <xacro:property name="rotor_drag_coefficient" value="8.06428e-04" />
+  <xacro:property name="rolling_moment_coefficient" value="0.00001" />
+
+  <xacro:property name="movable_mass_mass" value="1" />
+  <xacro:property name="movable_mass_dimension" value="0.08" />
+  <xacro:property name="movable_mass_offset" value="0.025" />
+
+  <xacro:property name="imu_mass" value="0.02"/>
+  <xacro:property name="imu_size" value="0.01"/>
+
+  <xacro:property name="sin45" value="0.7071" />
+  <xacro:property name="cos45" value="0.7071" />
+  <xacro:property name="PI" value="3.14" />
+
+  <!-- Property Blocks -->
+  <xacro:property name="body_inertia">
+    <inertia ixx="5.5268" ixy="0.0" ixz="0.0" iyy="5.5268" iyz="0.0" izz="6.8854" />
+  </xacro:property>
+
+  <!-- inertia of a single rotor, assuming it is a cuboid. Height=3mm, width=15mm -->
+  <xacro:property name="rotor_inertia">
+    <inertia 
+    ixx="${1/12 * mass_rotor * (0.015 * 0.015 + 0.003 * 0.003) * rotor_velocity_slowdown_sim}" 
+    iyy="${1/12 * mass_rotor * (4 * radius_rotor * radius_rotor + 0.003 * 0.003) * rotor_velocity_slowdown_sim}" 
+    izz="${1/12 * mass_rotor * (4 * radius_rotor * radius_rotor + 0.015 * 0.015) * rotor_velocity_slowdown_sim}" 
+    ixy="0.0" ixz="0.0"  iyz="0.0" /> <!-- [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] -->
+  </xacro:property>
+
+  <!-- inertia of a movable mass, assuming it is a cube. The formula is I=ms^2/6 where "s" is length of one side
+   of the cube and "m" is its mass-->
+
+  <xacro:property name="movable_mass_inertia">
+     <inertia 
+     ixx="${(movable_mass_mass * movable_mass_dimension * movable_mass_dimension)/6}" 
+     iyy="${(movable_mass_mass * movable_mass_dimension * movable_mass_dimension)/6}" 
+     izz="${(movable_mass_mass * movable_mass_dimension * movable_mass_dimension)/6}" 
+     ixy="0.0" ixz="0.0"  iyz="0.0" /> <!-- [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] -->
+  </xacro:property>
+
+  <xacro:property name="imu_inertia">
+    <inertia 
+    ixx="${(imu_mass * imu_size * imu_size)/6}" 
+    iyy="${(imu_mass * imu_size * imu_size)/6}" 
+    izz="${(imu_mass * imu_size * imu_size)/6}" 
+    ixy="0.0" ixz="0.0"  iyz="0.0" /> <!-- [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] -->
+  </xacro:property>
+
+  <!-- Included URDF Files -->
+  <xacro:include filename="$(find morus_description)/urdf/multirotor_base.urdf.xacro" />
+
+  <!-- Instantiate multirotor_base_macro once-->
+  <xacro:multirotor_base_macro
+    robot_namespace="$(arg name)"
+    mass="${mass}"
+    body_width="${body_width}"
+    body_height="${body_height}"
+    mesh_file="${mesh_file}"
+    mesh_file_mass="${mesh_file_mass}">
+    <xacro:insert_block name="body_inertia" />
+  </xacro:multirotor_base_macro>
+
+
+  <xacro:property name="land_gear_inertia">
+    <inertia
+    ixx="1e-6"
+    iyy="1e-6"
+    izz="1e-6"
+    ixy="0.0" ixz="0.0"  iyz="0.0" /> <!-- [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] -->
+  </xacro:property>
+
+  <xacro:landing_gear
+      parent="base_link"
+      gear_num = "1"
+      mass = "1e-6"
+      dim_x = "0.8"
+      dim_y = "0.1"
+      dim_z = "0.05">
+      <origin xyz="0 -0.325 -0.6" rpy="0 0 0" />
+      <xacro:insert_block name="land_gear_inertia"/>
+  </xacro:landing_gear>
+
+  <xacro:landing_gear
+      parent="base_link"
+      gear_num = "2"
+      mass = "1e-6"
+      dim_x = "0.8"
+      dim_y = "0.1"
+      dim_z = "0.05">
+      <origin xyz="0 0.325 -0.6" rpy="0 0 0" />
+      <xacro:insert_block name="land_gear_inertia"/>
+  </xacro:landing_gear>
+
+
+</robot>

@@ -5,6 +5,7 @@ project(morus_gazebo)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+	cmake_modules
 	roscpp
 	std_msgs
 	geometry_msgs
@@ -41,7 +42,7 @@ if (FALSE)#${gazebo_VERSION_MAJOR} LESS 6
   )
 endif()
 find_package(gazebo REQUIRED)
-
+find_package(Eigen REQUIRED)
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -128,10 +129,10 @@ find_package(gazebo REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-INCLUDE_DIRS include launch plugins worlds
+INCLUDE_DIRS include launch plugins worlds ${Eigen_INCLUDE_DIRS}
 	LIBRARIES morus_gazebo
 	CATKIN_DEPENDS geometry_msgs roscpp std_msgs message_runtime sensor_msgs morus_uav_ros_msgs
-	DEPENDS system_lib gazebo_ros 
+	DEPENDS system_lib gazebo_ros eigen
 	)
 
 ###########
@@ -144,6 +145,8 @@ INCLUDE_DIRS include launch plugins worlds
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
+
+include_directories(${Eigen_INCLUDE_DIRS})
 
 ## Declare a C++ library
 # add_library(morus_gazebo
@@ -180,8 +183,9 @@ target_link_libraries(${PROJECT_NAME}_gm_status ${roscpp_LIBRARIES} ${catkin_LIB
 add_library(${PROJECT_NAME}_battery_status plugins/battery_status/batteryStatus.cpp)
 target_link_libraries(${PROJECT_NAME}_battery_status  ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
-add_library(${PROJECT_NAME}_base_plugin plugins/base_plugin/basePlugin.cpp)
-target_link_libraries(${PROJECT_NAME}_base_plugin  ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+add_library(${PROJECT_NAME}_base_attitude2motion plugins/base_attitude2motion/baseAttitude2Motion.cpp)
+target_link_libraries(${PROJECT_NAME}_base_attitude2motion  ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
 #############
 ## Install ##
 #############
