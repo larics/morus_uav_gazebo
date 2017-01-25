@@ -25,6 +25,7 @@
     <plugin filename="libmorus_gazebo_base_attitude2motion.so" name="attitude2motion">
       <robotNamespace>$(arg name)</robotNamespace>
       <imuTopicName>/morus2/imu</imuTopicName>
+      <connectedICEs>/morus2/gm/1/Status /morus2/gm/2/Status /morus2/gm/3/Status /morus2/gm/4/Status</connectedICEs>
     </plugin>
   </gazebo>
   

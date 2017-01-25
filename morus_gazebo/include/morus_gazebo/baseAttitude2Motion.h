@@ -8,6 +8,7 @@
 #include <boost/bind.hpp>
 #include <Eigen/Eigen>
 #include <sensor_msgs/Imu.h>
+#include <morus_uav_ros_msgs/GmStatus.h>
 
 namespace gazebo
 {
@@ -24,12 +25,14 @@ namespace gazebo
 	
         ros::CallbackQueue callback_queue_;
         ros::NodeHandle* rosnodeHandle_;
-        std::string robot_namespace_, ros_topic_,imu_topic_name_,link_name_;
-        //ros::Publisher ros_publisher_;
-	sensor_msgs::Imu imuMsg;
+        std::string robot_namespace_, ros_topic_,imu_topic_name_,link_name_,connected_ice_motors_;
+        
+	morus_uav_ros_msgs::GmStatus gm_status_msg_;
+	sensor_msgs::Imu imuMsg_;
 	ros::Subscriber imuMsg_subscriber_;
+	std::vector<ros::Subscriber> gmMsg_subscribers_;
 	void onImuMsg(const sensor_msgs::ImuPtr& msg);
-
+	void onICEMsg(const morus_uav_ros_msgs::GmStatusPtr& msg);
         void onUpdate();
     };
 }
