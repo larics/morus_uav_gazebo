@@ -98,46 +98,56 @@ void GMStatus::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 
 void GMStatus::OnGMIgnitionMsg(const morus_uav_ros_msgs::GmIgnitionConstPtr& msg)
 {
-	ROS_INFO("Received GMIgnition message");
+    // TO DO : Provide some action when Ignition is received
+    // for now, just push notification 
+    ROS_INFO("Received GMIgnition message");
 }
 
 
 void GMStatus::OnUpdate()
 {
-    common::Time cur_time = this->world->GetSimTime();
-    
-    sampling_time_ = cur_time.Double() - prev_sim_time_;
-    prev_sim_time_ = cur_time.Double();
-    double motor_rot_vel_ = joint_->GetVelocity(0);
-    if (motor_rot_vel_ / (2 * M_PI) > 1 / (2 * sampling_time_)) {
-      gzerr << "Aliasing on motor might occur. Consider making smaller simulation time steps or raising the rotor_velocity_slowdown_sim_ param.\n";
-    }
-    double real_motor_velocity = motor_rot_vel_ * 10;//RotorVelocitySlowdownSim := 10 in rotors_sim
-    double force = real_motor_velocity * real_motor_velocity * motor_constant_;
-    
-    // Get new commands/state
-    callback_queue_.callAvailable();
+  // This function is called every Gazebo update, to update ROS msgs with the information
+  // later published through ROS
+  
+  // First we need to measure DT
+  common::Time cur_time = this->world->GetSimTime();
+  sampling_time_ = cur_time.Double() - prev_sim_time_;
+  prev_sim_time_ = cur_time.Double();
+  // We measure the rotation of the rotor Gazebo joint
+  double motor_rot_vel_ = joint_->GetVelocity(0);
+  if (motor_rot_vel_ / (2 * M_PI) > 1 / (2 * sampling_time_)) {
+    gzerr << "Aliasing on motor might occur. Consider making smaller simulation time steps or raising the rotor_velocity_slowdown_sim_ param.\n";
+  }
+  double real_motor_velocity = motor_rot_vel_ * 10;//RotorVelocitySlowdownSim := 10 in rotors_sim
+  // Standard thrust force calculation like the one produced in rotors_sim
+  double force = real_motor_velocity * real_motor_velocity * motor_constant_;
+  
+  // Get new commands/state
+  callback_queue_.callAvailable();
+  
+  // Here we fill the gm_status msg fith data
+  this->gm_status_msg.header.frame_id = this->model->GetName();
+  this->gm_status_msg.header.stamp.sec = cur_time.sec;
+  this->gm_status_msg.header.stamp.nsec = cur_time.nsec;
+  this->gm_status_msg.motor_id = atoi(this->gm_ID_.c_str());
+  this->gm_status_msg.can_timestamp = 1;
+  
+  // For some reason one cannot simple gather force on rotor link
+  // TO DO: Check why this is not working
+  //math::Vector3 force_on_rotor = this->link_->GetRelativeForce();
+  
+  this->gm_status_msg.force_M = force;// force_on_rotor.z; // measured force in Newton
 
-    this->gm_status_msg.header.frame_id = this->model->GetName();
-    this->gm_status_msg.header.stamp.sec = cur_time.sec;
-    this->gm_status_msg.header.stamp.nsec = cur_time.nsec;
-    this->gm_status_msg.motor_id = atoi(this->gm_ID_.c_str());
-    this->gm_status_msg.can_timestamp = 1;
-    
-    math::Vector3 force_on_rotor = this->link_->GetRelativeForce();
-    //ROS_INFO("Force %s x= %f y=%f z=%f",this->link_->GetName().c_str(),&force_on_rotor.x,&force_on_rotor.y,&force_on_rotor.z);
-    this->gm_status_msg.force_M = force;// force_on_rotor.z;		        // measured force in Newton
-   // ROS_INFO("Thrust force is = %f",&force);
-    this->gm_status_msg.speed_M	=2.0;	        	// measured rotational velocity radian per second
-    this->gm_status_msg.temperature_M = 35.5;	    	// measured temperature in Celsius degree
-    this->gm_status_msg.fuel_level_M = 0.1; 	    	// measured fuel level in percentage
+  this->gm_status_msg.speed_M	=2.0;	        	// measured rotational velocity radian per second
+  this->gm_status_msg.temperature_M = 35.5;	    	// measured temperature in Celsius degree
+  this->gm_status_msg.fuel_level_M = 0.1; 	    	// measured fuel level in percentage
 
-    this->gm_status_msg.ignition_S = 1;             	// setted ignition flag (0-off, 1-on)
-    this->gm_status_msg.starter_ppm_S  = 1000;        	// setted ppm value for e-starter (range 1000-1900)
-    this->gm_status_msg.speed_S = 1300;		        // setted reference for gm velocity in radian per second
-    
-    
-    gm_publisher_.publish(gm_status_msg);		// publish status msg to ROS
+  this->gm_status_msg.ignition_S = 1;             	// setted ignition flag (0-off, 1-on)
+  this->gm_status_msg.starter_ppm_S  = 1000;        	// setted ppm value for e-starter (range 1000-1900)
+  this->gm_status_msg.speed_S = 1300;		        // setted reference for gm velocity in radian per second
+  
+  
+  gm_publisher_.publish(gm_status_msg);		// publish status msg to ROS
 
 
 }

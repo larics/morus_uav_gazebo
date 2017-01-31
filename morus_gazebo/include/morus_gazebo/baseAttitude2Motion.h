@@ -1,4 +1,4 @@
-/// This class ingerits standard Gazebo plugins and is used to collect IMU msgs
+/// This class inherits standard Gazebo plugins and is used to collect IMU msgs
 /// from ROS, and rotate the body in the direction of the IMU gyroscope values.
 /// The class uses GmStatus msg to feed the forces that are applied to the body
 /// CoM.
