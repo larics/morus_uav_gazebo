@@ -25,6 +25,7 @@ void GMStatus::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
     model = _parent;
     world = model->GetWorld();
     prev_sim_time_ = 0.0;
+    
     this->robot_namespace_ = "";
     if(_sdf->HasElement("robotNamespace")) this->robot_namespace_ = _sdf->GetElement("robotNamespace")->Get<std::string>();
     else ROS_INFO("GMStatus plugin missing <robotNamespace>, defaults to \"%s\"", robot_namespace_.c_str());

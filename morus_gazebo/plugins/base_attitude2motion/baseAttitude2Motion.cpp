@@ -4,10 +4,7 @@
 
 using namespace gazebo;
 
-BaseAttitude2Motion::BaseAttitude2Motion()
-{
-
-}
+BaseAttitude2Motion::BaseAttitude2Motion(){}
 
 BaseAttitude2Motion::~BaseAttitude2Motion()
 {
@@ -22,10 +19,12 @@ BaseAttitude2Motion::~BaseAttitude2Motion()
 
 void BaseAttitude2Motion::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 {
-    // Keep the information about the model
+    // Keep the information about the model to be used later to grab links and joints
     model_ = _parent;
     world_ = model_->GetWorld();
-
+    
+    // This portion of the code proforms sdf check to see if all the parameters are set 
+    // If not, procedure throws ROS INFO notification and defaults the parameters.
     this->robot_namespace_ = "";
     if(_sdf->HasElement("robotNamespace")) this->robot_namespace_ = _sdf->GetElement("robotNamespace")->Get<std::string>();
     else ROS_INFO("BaseAttitude2Motion plugin missing <robotNamespace>, defaults to \"%s\"", robot_namespace_.c_str());
@@ -54,12 +53,14 @@ void BaseAttitude2Motion::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
       return;
     }
    
-
+    // Here we create ROS node handle, necessary to register publishers and subscribers
     this->rosnodeHandle_ = new ros::NodeHandle(this->robot_namespace_);
     
+    // There is but a single IMU msgs to subscribe to
     imuMsg_subscriber_ = this->rosnodeHandle_->subscribe(imu_topic_name_,1,&BaseAttitude2Motion::onImuMsg,this);
 
-
+    // Parameter connected_ice_motors_ holds a string with GmStatus msgs plugin subscribes to
+    // The topics are parsed from the string and passed to create subscriber to each topic. 
     std::stringstream ss(connected_ice_motors_);
     std::string token;
     while (ss >> token)
@@ -68,21 +69,22 @@ void BaseAttitude2Motion::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
         gmMsg_subscribers_.push_back(this->rosnodeHandle_->subscribe(token.c_str(),1,&BaseAttitude2Motion::onIceMsg,this));//boost::bind(&BaseAttitude2Motion::onIceMsg, this, _1)));//,_1,token)));
 	gmMsg_thrust_.push_back(0.0);
     }
-
+    // Connect Update function to Gazebo events
     this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&BaseAttitude2Motion::onUpdate, this));
 }
 
 void BaseAttitude2Motion::onImuMsg(const sensor_msgs::ImuPtr& msg)
 {
+  // At the moment we are only concerned with body frame angular velocity 
+  // which can be applied to the Gazebo UAV body.
   this->omega_body_frame_.x = msg->angular_velocity.x;
   this->omega_body_frame_.y = msg->angular_velocity.y;
   this->omega_body_frame_.z = msg->angular_velocity.z;
-  //ROS_INFO("Received IMU message");
 }
 
 void BaseAttitude2Motion::onIceMsg(const morus_uav_ros_msgs::GmStatusPtr& msg)//,const std::string& topic) //const morus_uav_ros_msgs::GmStatusPtr& msg)
 {
-  int id = msg->motor_id-1;
+  int id = msg->motor_id-1; // - is because msg and SDF do not match
   // Try to access and updated the vector of Forces with correct ID
   try {
     gmMsg_thrust_[id] = msg->force_M;     // vector::at [id] might not exist
@@ -91,11 +93,11 @@ void BaseAttitude2Motion::onIceMsg(const morus_uav_ros_msgs::GmStatusPtr& msg)//
     //std::cerr << "Out of Range error: " << oor.what() << '\n';
     ROS_ERROR("Failed to access force at motor ID = %n. Supported IDs include 1-front, 2-right, 3-back, 4-left",&id);
   }
-  //ROS_INFO("Received ICE message");
 }
 
 void BaseAttitude2Motion::onUpdate()
 {
+    // This function is called every Gazebo update cycle to apply forces and rotation to the body
     common::Time cur_time = this->world_->GetSimTime();
     // Apply the body rotation based on IMU rotation speed Measurement
     // Angular rotation is applied in the body reference frame 
@@ -105,12 +107,8 @@ void BaseAttitude2Motion::onUpdate()
     double sum_of_forces = std::accumulate(gmMsg_thrust_.begin(), gmMsg_thrust_.end(), 0.0);
     // Project the sum of thrust forces in body z-axis
     math::Vector3 total_thrust(0.0, 0.0, sum_of_forces);
-    
-    math::Vector3 xyz_offset(0, 0, 0); 
-    // Calculate the wind gust force.
-    //double wind_gust_strength = wind_gust_force_mean_;
-    //wind_gust = wind_gust_strength * wind_gust_direction_;
-    // Apply a force from the wind gust to the link.
+
+    // Apply a force to the link.
     link_->AddRelativeForce(total_thrust);
 
 }
