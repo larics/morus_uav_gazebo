@@ -100,21 +100,21 @@ class AttitudeControl:
 
         self.t_old = 0
 
-        rospy.Subscriber('/morus/imu', Imu, self.ahrs_cb)
-        rospy.Subscriber('/morus/mot_vel_ref', Float32, self.mot_vel_ref_cb)
-        rospy.Subscriber('/morus/euler_ref', Vector3, self.euler_ref_cb)
+        rospy.Subscriber('imu', Imu, self.ahrs_cb)
+        rospy.Subscriber('mot_vel_ref', Float32, self.mot_vel_ref_cb)
+        rospy.Subscriber('euler_ref', Vector3, self.euler_ref_cb)
         rospy.Subscriber('/clock', Clock, self.clock_cb)
 
-        self.pub_mass0 = rospy.Publisher('/morus/movable_mass_0_position_controller/command', Float64, queue_size=1)
-        self.pub_mass1 = rospy.Publisher('/morus/movable_mass_1_position_controller/command', Float64, queue_size=1)
-        self.pub_mass2 = rospy.Publisher('/morus/movable_mass_2_position_controller/command', Float64, queue_size=1)
-        self.pub_mass3 = rospy.Publisher('/morus/movable_mass_3_position_controller/command', Float64, queue_size=1)
-        self.pub_pid_roll = rospy.Publisher('/morus/pid_roll', PIDController, queue_size=1)
-        self.pub_pid_roll_rate = rospy.Publisher('/morus/pid_roll_rate', PIDController, queue_size=1)
-        self.pub_pid_pitch = rospy.Publisher('/morus/pid_pitch', PIDController, queue_size=1)
-        self.pub_pid_pitch_rate = rospy.Publisher('/morus/pid_pitch_rate', PIDController, queue_size=1)
-        self.pub_pid_yaw = rospy.Publisher('/morus/pid_yaw', PIDController, queue_size=1)
-        self.pub_pid_yaw_rate = rospy.Publisher('/morus/pid_yaw_rate', PIDController, queue_size=1)
+        self.pub_mass0 = rospy.Publisher('movable_mass_0_position_controller/command', Float64, queue_size=1)
+        self.pub_mass1 = rospy.Publisher('movable_mass_1_position_controller/command', Float64, queue_size=1)
+        self.pub_mass2 = rospy.Publisher('movable_mass_2_position_controller/command', Float64, queue_size=1)
+        self.pub_mass3 = rospy.Publisher('movable_mass_3_position_controller/command', Float64, queue_size=1)
+        self.pub_pid_roll = rospy.Publisher('/pid_roll', PIDController, queue_size=1)
+        self.pub_pid_roll_rate = rospy.Publisher('pid_roll_rate', PIDController, queue_size=1)
+        self.pub_pid_pitch = rospy.Publisher('pid_pitch', PIDController, queue_size=1)
+        self.pub_pid_pitch_rate = rospy.Publisher('pid_pitch_rate', PIDController, queue_size=1)
+        self.pub_pid_yaw = rospy.Publisher('pid_yaw', PIDController, queue_size=1)
+        self.pub_pid_yaw_rate = rospy.Publisher('pid_yaw_rate', PIDController, queue_size=1)
         self.cfg_server = Server(MavAttitudeCtlParamsConfig, self.cfg_callback)
 
     def run(self):

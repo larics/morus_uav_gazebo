@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <launch>
-
+  <arg name="namespace" default="/morus2"/>
   <!-- Load joint controller configurations from YAML file to parameter server -->
-  <rosparam file="$(find morus_control)/config/morus_control.yaml" command="load"/>
+  <rosparam file="$(find morus_control)/config/morus2_control.yaml" command="load"/>
 
   <!-- load the controllers -->
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
-    output="screen" ns="/morus"  args="joint_state_controller
+    output="screen" ns="$(arg namespace)"  args="joint_state_controller
 		movable_mass_0_position_controller
 		movable_mass_1_position_controller 
 		movable_mass_2_position_controller 
@@ -14,19 +14,19 @@
 
   <!-- convert joint states to TF transforms for rviz, etc -->
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
-    respawn="false" output="screen">
-    <remap from="/joint_states" to="/morus/joint_states"/>
+    respawn="false" output="screen"  ns="$(arg namespace)">
+    <!--remap from="/joint_states" to="$(arg namespace)/joint_states"/-->
   </node>
 
 
-  <node pkg="morus_control" type="mav_state_pub.py" name="mav_state_pub" output="screen" />
+  <node pkg="morus_control" type="mav_state_pub.py" name="mav_state_pub" output="screen"  ns="$(arg namespace)"/>
 
-  <node pkg="morus_control" type="height_yaw_ctl.py" name="height_ctl" output="screen">
+  <node pkg="morus_control" type="height_yaw_ctl.py" name="height_ctl" output="screen"  ns="$(arg namespace)">
         <param name="gm_attitude_ctl" value="0"/>
         <param name="/use_sim_time" value="true"/>
   </node>
 
-  <node pkg="morus_control" type="mass_ctl_attitude.py" name="mass_ctl_attitude" output="screen">
+  <node pkg="morus_control" type="mass_ctl_attitude.py" name="mass_ctl_attitude" output="screen"  ns="$(arg namespace)">
         <param name="/use_sim_time" value="true"/>
   </node>
 

@@ -67,21 +67,33 @@
     <gazebo>
     <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_1">
       <gmID> 1 </gmID>
+      <linkName>rotor_0</linkName>
+      <jointName>rotor_0_joint</jointName>
+      <motorConstant>0.000456874</motorConstant>
     </plugin>
   </gazebo>
   <gazebo>
     <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_22">
       <gmID> 2 </gmID>
+      <linkName>rotor_1</linkName>
+      <jointName>rotor_1_joint</jointName>
+      <motorConstant>0.000456874</motorConstant>
     </plugin>
   </gazebo>
   <gazebo>
     <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_13">
       <gmID> 3 </gmID>
+      <linkName>rotor_2</linkName>
+      <jointName>rotor_2_joint</jointName>
+      <motorConstant>0.000456874</motorConstant>
     </plugin>
   </gazebo>
   <gazebo>
     <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_14">
       <gmID> 4 </gmID>
+      <linkName>rotor_3</linkName>
+      <jointName>rotor_3_joint</jointName>
+      <motorConstant>0.000456874</motorConstant>
     </plugin>
   </gazebo>
   

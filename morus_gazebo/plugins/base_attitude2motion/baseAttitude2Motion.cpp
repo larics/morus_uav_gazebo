@@ -57,13 +57,16 @@ void BaseAttitude2Motion::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 
     this->rosnodeHandle_ = new ros::NodeHandle(this->robot_namespace_);
     
-    imuMsg_subscriber_ = this->rosnodeHandle_->subscribe(imu_topic_name_,1, &BaseAttitude2Motion::onImuMsg, this);
+    imuMsg_subscriber_ = this->rosnodeHandle_->subscribe(imu_topic_name_,1,&BaseAttitude2Motion::onImuMsg,this);
+
 
     std::stringstream ss(connected_ice_motors_);
     std::string token;
     while (ss >> token)
     {
-        gmMsg_subscribers_.push_back(this->rosnodeHandle_->subscribe(token.c_str(),1, &BaseAttitude2Motion::onICEMsg, this));
+	// TO DO - boost::bind -> to add a distinguishable parameter for the callback
+        gmMsg_subscribers_.push_back(this->rosnodeHandle_->subscribe(token.c_str(),1,&BaseAttitude2Motion::onIceMsg,this));//boost::bind(&BaseAttitude2Motion::onIceMsg, this, _1)));//,_1,token)));
+	gmMsg_thrust_.push_back(0.0);
     }
 
     this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&BaseAttitude2Motion::onUpdate, this));
@@ -71,28 +74,44 @@ void BaseAttitude2Motion::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf)
 
 void BaseAttitude2Motion::onImuMsg(const sensor_msgs::ImuPtr& msg)
 {
-	ROS_INFO("Received IMU message");
+  this->omega_body_frame_.x = msg->angular_velocity.x;
+  this->omega_body_frame_.y = msg->angular_velocity.y;
+  this->omega_body_frame_.z = msg->angular_velocity.z;
+  //ROS_INFO("Received IMU message");
 }
 
-void BaseAttitude2Motion::onICEMsg(const morus_uav_ros_msgs::GmStatusPtr& msg)
+void BaseAttitude2Motion::onIceMsg(const morus_uav_ros_msgs::GmStatusPtr& msg)//,const std::string& topic) //const morus_uav_ros_msgs::GmStatusPtr& msg)
 {
-	ROS_INFO("Received ICE message");
+  int id = msg->motor_id-1;
+  // Try to access and updated the vector of Forces with correct ID
+  try {
+    gmMsg_thrust_[id] = msg->force_M;     // vector::at [id] might not exist
+  }
+  catch (const std::out_of_range& oor) {
+    //std::cerr << "Out of Range error: " << oor.what() << '\n';
+    ROS_ERROR("Failed to access force at motor ID = %n. Supported IDs include 1-front, 2-right, 3-back, 4-left",&id);
+  }
+  //ROS_INFO("Received ICE message");
 }
 
 void BaseAttitude2Motion::onUpdate()
 {
     common::Time cur_time = this->world_->GetSimTime();
+    // Apply the body rotation based on IMU rotation speed Measurement
+    // Angular rotation is applied in the body reference frame 
+    this->model_->SetAngularVel(this->omega_body_frame_);
 
-    // Calculate the wind force.
-
-    math::Vector3 wind_gust(0, 500, 0);
+    // Calculate the sum of thrust forces
+    double sum_of_forces = std::accumulate(gmMsg_thrust_.begin(), gmMsg_thrust_.end(), 0.0);
+    // Project the sum of thrust forces in body z-axis
+    math::Vector3 total_thrust(0.0, 0.0, sum_of_forces);
     
     math::Vector3 xyz_offset(0, 0, 0); 
     // Calculate the wind gust force.
     //double wind_gust_strength = wind_gust_force_mean_;
     //wind_gust = wind_gust_strength * wind_gust_direction_;
     // Apply a force from the wind gust to the link.
-    link_->AddForceAtRelativePosition(wind_gust, xyz_offset);
+    link_->AddRelativeForce(total_thrust);
 
 }
 GZ_REGISTER_MODEL_PLUGIN(BaseAttitude2Motion);
