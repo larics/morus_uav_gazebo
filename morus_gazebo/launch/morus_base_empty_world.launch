@@ -27,8 +27,8 @@
   </include>
 
   <include file="$(find morus_gazebo)/launch/spawn_morus_base.launch" >
-    <arg name="x" value="5" />
-    <arg name="y" value="5" />
+    <arg name="x" value="0" />
+    <arg name="y" value="0" />
   </include>
 </launch>
 
