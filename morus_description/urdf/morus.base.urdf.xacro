@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 
+
 <robot name="morus" xmlns:xacro="http://ros.org/wiki/xacro">
   <!-- Properties -->
   <xacro:property name="rotor_velocity_slowdown_sim" value="10" />
@@ -70,6 +71,8 @@
 
   <!-- Included URDF Files -->
   <xacro:include filename="$(find morus_description)/urdf/multirotor_base.urdf.xacro" />
+  
+
 
   <!-- Instantiate multirotor_base_macro once-->
   <xacro:multirotor_base_macro

@@ -13,7 +13,7 @@
   <arg name="model" value="$(find morus_description)/urdf/morus.base.gazebo.xacro" />
 
   <!-- send the robot XML to param server -->
-  <param name="robot_description_$(arg name)" command="
+  <param name="/$(arg name)/robot_description" command="
     $(find xacro)/xacro.py '$(arg model)'
     enable_logging:=$(arg enable_logging)
     enable_ground_truth:=$(arg enable_ground_truth)
@@ -26,7 +26,7 @@
 
   <!-- push robot_description to factory and spawn robot in gazebo -->
   <node name="spawn_robot_$(arg name)" pkg="gazebo_ros" type="spawn_model"
-   args="-param /robot_description_$(arg name)
+   args="-param /$(arg name)/robot_description
          -urdf
          -x $(arg x)
          -y $(arg y)
@@ -34,5 +34,12 @@
          -model $(arg name)"
    respawn="false" output="screen" >
   </node>
+  
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="rob_st_pub" >
+    <remap from="robot_description" to="/$(arg name)/robot_description" />
+    <remap from="joint_states" to="/$(arg name)/joint_states" />
+  </node>
+
 
 </launch>

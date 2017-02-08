@@ -186,6 +186,8 @@ target_link_libraries(${PROJECT_NAME}_battery_status  ${roscpp_LIBRARIES} ${catk
 add_library(${PROJECT_NAME}_base_attitude2motion plugins/base_attitude2motion/baseAttitude2Motion.cpp)
 target_link_libraries(${PROJECT_NAME}_base_attitude2motion  ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
+add_executable(ned_pose_publisher src/nodes/ned_pose_publisher.cpp)
+target_link_libraries(ned_pose_publisher ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############

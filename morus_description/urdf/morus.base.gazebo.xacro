@@ -6,13 +6,14 @@
   <xacro:property name="namespace" value="$(arg name)" />
   -->
 
+ 
   <gazebo>
     <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
       <robotNamespace>/morus</robotNamespace>
-      <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+       <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
     </plugin>
   </gazebo>
-
+  
   <xacro:property name="enable_bag_plugin" value="false" />
   <xacro:property name="bag_file" value="morus.bag" />
 
@@ -29,55 +30,12 @@
     </plugin>
   </gazebo>
   
-  <!-- This next piece is published either through pixhawk or second model
-  <gazebo>
-    <plugin filename="libmorus_gazebo_battery_status.so" name="battery_status_11">
-      <batteryID> 11 </batteryID>
-    </plugin>
-  </gazebo>
-  <gazebo>
-    <plugin filename="libmorus_gazebo_battery_status.so" name="battery_status_12">
-      <batteryID> 12 </batteryID>
-    </plugin>
-  </gazebo>
-  <gazebo>
-    <plugin filename="libmorus_gazebo_battery_status.so" name="battery_status_13">
-      <batteryID> 13 </batteryID>
-    </plugin>
-  </gazebo>
-  <gazebo>
-    <plugin filename="libmorus_gazebo_battery_status.so" name="battery_status_14">
-      <batteryID> 14 </batteryID>
-    </plugin>
-  </gazebo>-->
-  
-  <!-- Start publishing GM status msgs
-    <gazebo>
-    <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_1">
-      <gmID> 1 </gmID>
-    </plugin>
-  </gazebo>
-  <gazebo>
-    <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_22">
-      <gmID> 2 </gmID>
-    </plugin>
-  </gazebo>
-  <gazebo>
-    <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_13">
-      <gmID> 3 </gmID>
-    </plugin>
-  </gazebo>
-  <gazebo>
-    <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_14">
-      <gmID> 4 </gmID>
-    </plugin>
-  </gazebo>-->
   
   <!-- Mount first generic pose sensor-->
   <xacro:odometry_plugin_macro
     namespace="$(arg name)"
     odometry_sensor_suffix="1"
-    child_frame_id="base"
+    child_frame_id="odom"
     parent_link="base_link"
     pose_topic="pose"
     pose_with_covariance_topic="pose_with_covariance"
