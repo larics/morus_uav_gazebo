@@ -88,28 +88,39 @@ void BaseAttitude2Motion::onIceMsg(const morus_uav_ros_msgs::GmStatusPtr& msg)//
   // Try to access and updated the vector of Forces with correct ID
   try {
     gmMsg_thrust_[id] = msg->force_M;     // vector::at [id] might not exist
+    ROS_INFO("Motor %d Force %lf", id, gmMsg_thrust_[id]);
   }
   catch (const std::out_of_range& oor) {
     //std::cerr << "Out of Range error: " << oor.what() << '\n';
-    ROS_ERROR("Failed to access force at motor ID = %n. Supported IDs include 1-front, 2-right, 3-back, 4-left",&id);
+    ROS_ERROR("Failed to access force at motor ID = %n. Supported IDs include 1-front, 2-right, 3-back, 4-left",id);
   }
 }
 
 void BaseAttitude2Motion::onUpdate()
 {
-    // This function is called every Gazebo update cycle to apply forces and rotation to the body
-    common::Time cur_time = this->world_->GetSimTime();
-    // Apply the body rotation based on IMU rotation speed Measurement
-    // Angular rotation is applied in the body reference frame 
-    this->model_->SetAngularVel(this->omega_body_frame_);
+  // C denotes child frame, P parent frame, and W world frame.
+  // Further C_pose_W_P denotes pose of P wrt. W expressed in C.
+  math::Vector3 C_linear_velocity_W_C = link_->GetRelativeLinearVel();
+  //     30kg*9.81m/s^2*sin(15deg)
+  // B = -------------------------    <--- wind resistance
+  //             (10 m/s)^2
+  double B = 30*9.81*0.2588190451/100;
+  math::Vector3 C_drag_W_C(B*C_linear_velocity_W_C[0]*C_linear_velocity_W_C[0],B*C_linear_velocity_W_C[1]*C_linear_velocity_W_C[1],B*C_linear_velocity_W_C[2]*C_linear_velocity_W_C[2]);
+  //Apply the force
+  link_->AddRelativeForce(C_drag_W_C);
+  // This function is called every Gazebo update cycle to apply forces and rotation to the body
+  common::Time cur_time = this->world_->GetSimTime();
+  // Apply the body rotation based on IMU rotation speed Measurement
+  // Angular rotation is applied in the body reference frame 
+  this->model_->SetAngularVel(this->omega_body_frame_);
 
-    // Calculate the sum of thrust forces
-    double sum_of_forces = std::accumulate(gmMsg_thrust_.begin(), gmMsg_thrust_.end(), 0.0);
-    // Project the sum of thrust forces in body z-axis
-    math::Vector3 total_thrust(0.0, 0.0, sum_of_forces);
+  // Calculate the sum of thrust forces
+  double sum_of_forces = std::accumulate(gmMsg_thrust_.begin(), gmMsg_thrust_.end(), 0.0);
+  // Project the sum of thrust forces in body z-axis
+  
+  math::Vector3 total_thrust(0.0, 0.0, sum_of_forces);
 
-    // Apply a force to the link.
-    link_->AddRelativeForce(total_thrust);
-
+  // Apply a force to the link.
+  link_->AddRelativeForce(total_thrust);
 }
 GZ_REGISTER_MODEL_PLUGIN(BaseAttitude2Motion);

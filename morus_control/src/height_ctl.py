@@ -77,7 +77,7 @@ class HeightControl:
         rospy.Subscriber('pose_with_covariance', PoseWithCovarianceStamped, self.pose_cb)
         rospy.Subscriber('velocity', TwistStamped, self.vel_cb)
         rospy.Subscriber('vel_ref', Vector3, self.vel_ref_cb)
-        rospy.Subscriber('/morus2/pos_ref', Vector3, self.pos_ref_cb)
+        rospy.Subscriber('pos_ref', Vector3, self.pos_ref_cb)
         self.pub_pid_z = rospy.Publisher('pid_z', PIDController, queue_size=1)
         self.pub_pid_vz = rospy.Publisher('pid_vz', PIDController, queue_size=1)
         self.mot_ref_pub = rospy.Publisher('mot_vel_ref', Float32, queue_size=1)

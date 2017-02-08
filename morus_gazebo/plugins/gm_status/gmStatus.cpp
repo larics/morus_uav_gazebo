@@ -139,7 +139,8 @@ void GMStatus::OnUpdate()
   this->gm_status_msg.force_M = force;// force_on_rotor.z; // measured force in Newton
 
   this->gm_status_msg.speed_M	=2.0;	        	// measured rotational velocity radian per second
-  this->gm_status_msg.temperature_M = 35.5;	    	// measured temperature in Celsius degree
+  this->gm_status_msg.temperatureR_M = 35.5;	    	// measured temperature in Celsius degree
+  this->gm_status_msg.temperatureL_M = 35.5;
   this->gm_status_msg.fuel_level_M = 0.1; 	    	// measured fuel level in percentage
 
   this->gm_status_msg.ignition_S = 1;             	// setted ignition flag (0-off, 1-on)
