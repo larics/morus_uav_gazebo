@@ -29,7 +29,6 @@ void OdometrySubscriber::odometryCallback(const nav_msgs::OdometryPtr &msg)
   tf_listener_.transformPoint("world_ned",enuTwist,nedTwist);
   geometry_msgs::PointStamped nedTwistMsg;
   tf::pointStampedTFToMsg(nedTwist,nedTwistMsg);
-  //data_=*msg;
   
   ned_data_ = *msg;
   ned_data_.pose.pose.position = nedPoseMsg.pose.position;
@@ -54,38 +53,10 @@ int main(int argc, char** argv){
   
   ros::Subscriber ref_sub = node.subscribe("odometry", 1, &OdometrySubscriber::odometryCallback, odom_data);
 
-  //tf::TransformListener listener;
-  unsigned int seq = 0;
-  ros::Rate rate(10.0);
+  ros::Rate rate(20.0);
   
   while (node.ok()){
     ros::spinOnce();
-    /*tf::StampedTransform transform;
-    try{
-      listener.lookupTransform("Observed from here", "Observing this",  
-                               ros::Time(0), transform);
-      listener.lookupTransform("world_ned", "local",  
-                               ros::Time(0), transform);
-      
-      geometry_msgs::PoseStamped pose_msg;
-      pose_msg.header.frame_id = "world";
-      pose_msg.header.seq = seq++;
-      pose_msg.header.stamp = ros::Time::now();
-      
-      pose_msg.pose.position.x = transform.getOrigin().x();
-      pose_msg.pose.position.y = transform.getOrigin().y();
-      pose_msg.pose.position = odom_data->data_.pose.pose.position;
-      odom_data->data_.pose.pose.position = pose_msg.pose.position;
-      geometry_msgs::PoseStamped pose_msg_ned;
-      listener.transformPoint("world_ned", &pose_msg, &pose_msg_ned);
-      odom_data->data_.pose.pose.position = pose_msg_ned.pose.position;
-      
-      
-    }
-    catch (tf::TransformException ex){
-      ROS_ERROR("%s",ex.what());
-      ros::Duration(1.0).sleep();
-    }*/
     
     morus_odometry.publish(odom_data->ned_data_);
     rate.sleep();

@@ -14,8 +14,9 @@
 
 /// \brief A class that implements ned publisherS.
 ///
-/// Base ned publisher through TF. In addition, this class
-/// implements ROS callbacks.
+/// Base NED publisher through TF. In addition, this class
+/// implements ROS callbacks to subscribe to Odometry sent
+/// from Gazebo.
 ///
 class OdometrySubscriber
 {
@@ -38,7 +39,6 @@ public:
     ///
     void odometryCallback(const nav_msgs::OdometryPtr &msg);
     
-    nav_msgs::Odometry data_;
     tf::TransformListener tf_listener_;
     nav_msgs::Odometry ned_data_;
 private:
