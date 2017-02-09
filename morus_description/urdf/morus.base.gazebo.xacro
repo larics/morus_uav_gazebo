@@ -5,8 +5,7 @@
   It seems that the xacro:property does not allow to use substitution args. Therefore, instead xacro parameter ${namespace}, subsitution argument is used $(arg name). This is 
   <xacro:property name="namespace" value="$(arg name)" />
   -->
-
- 
+  
   <gazebo>
     <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
       <robotNamespace>/morus</robotNamespace>
@@ -21,7 +20,7 @@
   <xacro:include filename="$(find morus_description)/urdf/morus.base.urdf.xacro" />
   <xacro:include filename="$(find rotors_description)/urdf/component_snippets.xacro" />
   
-  <!-- Temp -->
+  <!-- Attitude2Motion plugin -->
   <gazebo>
     <plugin filename="libmorus_gazebo_base_attitude2motion.so" name="attitude2motion">
       <robotNamespace>$(arg name)</robotNamespace>
@@ -30,18 +29,19 @@
     </plugin>
   </gazebo>
   
+  <!-- Hector gazebo plugins ==> GPS -->
   <gazebo>      
-  <plugin name="quadrotor_gps_sim" filename="libhector_gazebo_ros_gps.so">
-    <alwaysOn>true</alwaysOn>
-    <updateRate>4.0</updateRate>
-    <bodyName>base_link</bodyName>
-    <topicName>fix</topicName>
-    <velocityTopicName>fix_vel</velocityTopicName>
-    <drift>5.0 5.0 5.0</drift>
-    <gaussianNoise>0.1 0.1 0.1</gaussianNoise>
-    <velocityDrift>0 0 0</velocityDrift>
-    <velocityGaussianNoise>0.1 0.1 0.1</velocityGaussianNoise>
-<!--interface:position name="gps_position"/-->
+    <plugin name="quadrotor_gps_sim" filename="libhector_gazebo_ros_gps.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>4.0</updateRate>
+      <bodyName>base_link</bodyName>
+      <topicName>fix</topicName>
+      <velocityTopicName>fix_vel</velocityTopicName>
+      <drift>5.0 5.0 5.0</drift>
+      <gaussianNoise>0.1 0.1 0.1</gaussianNoise>
+      <velocityDrift>0 0 0</velocityDrift>
+      <velocityGaussianNoise>0.1 0.1 0.1</velocityGaussianNoise>
+  <!--interface:position name="gps_position"/-->
     </plugin>
   </gazebo>
   

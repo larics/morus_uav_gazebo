@@ -1,8 +1,10 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="namespace" default="/morus2"/>
+  <arg name="namespace" default="/morus"/>
+  <arg name="attitude_ctrl_flag" default="false"/>
+  
   <!-- Load joint controller configurations from YAML file to parameter server -->
-  <rosparam file="$(find morus_control)/config/morus2_control.yaml" command="load"/>
+  <rosparam file="$(find morus_control)/config/morus_control.yaml" command="load"/>
 
   <!-- load the controllers -->
   <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
@@ -25,10 +27,14 @@
         <param name="gm_attitude_ctl" value="0"/>
         <param name="/use_sim_time" value="true"/>
   </node>
-
-  <node pkg="morus_control" type="mass_ctl_attitude.py" name="mass_ctl_attitude" output="screen"  ns="$(arg namespace)">
+  
+  <group if="$(arg attitude_ctrl_flag)">
+  <!-- stuff that will only be evaluated if foo is true -->
+    <node pkg="morus_control" type="mass_ctl_attitude.py" name="mass_ctl_attitude" output="screen"  ns="$(arg namespace)">
         <param name="/use_sim_time" value="true"/>
-  </node>
+    </node>
+  </group>
+  
 
   <!--
   <node pkg="rosbag" type="record" name="rosbag_rec" args="/morus/sensors/pose1 /morus/velocity /morus/imu /morus/euler /morus/movable_mass_0_position_controller/state /morus/movable_mass_1_position_controller/state/morus/movable_mass_1_position_controller/state /morus/movable_mass_3_position_controller/state /morus/pid_roll_rate /morus/pid_roll /morus/pid_pitch_rate /morus/pid_pitch /morus/pid_z /morus/pid_vz"

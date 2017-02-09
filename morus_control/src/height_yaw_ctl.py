@@ -106,12 +106,6 @@ class HeightControl:
         '''
         Runs ROS node - computes PID algorithms for z and vz control.
         '''
-
-        while not self.start_flag:
-            print 'Waiting for velocity measurements.'
-            rospy.sleep(0.5)
-        print "Starting height control."
-
         self.t_old = rospy.Time.now()
         #self.t_old = datetime.now()
 
@@ -129,49 +123,52 @@ class HeightControl:
             # When you implement attitude control set the flag self.attitude_ctl to 1
 
             #self.gm_attitude_ctl = 1  # don't forget to set me to 1 when you implement attitude ctl
+	    if not self.start_flag:
+	      print 'Waiting for velocity measurements.'
+	      rospy.sleep(0.5)
+	    else:
+	      t = rospy.Time.now()
+	      dt = (t - self.t_old).to_sec()
+	      #t = datetime.now()
+	      #dt = (t - self.t_old).total_seconds()
+	      if dt > 0.105 or dt < 0.095:
+		  print dt
 
-            t = rospy.Time.now()
-            dt = (t - self.t_old).to_sec()
-            #t = datetime.now()
-            #dt = (t - self.t_old).total_seconds()
-            if dt > 0.105 or dt < 0.095:
-                print dt
+	      self.t_old = t
 
-            self.t_old = t
+	      self.mot_speed_hover = 427
+	      # prefilter for reference
+	      a = 0.1
+	      self.z_ref_filt = (1-a) * self.z_ref_filt  + a * self.z_sp
+	      vz_ref = self.pid_z.compute(self.z_ref_filt, self.z_mv, dt)
+	      self.mot_speed = self.mot_speed_hover + \
+			  self.pid_vz.compute(vz_ref, self.vz_mv, dt)
 
-            self.mot_speed_hover = 427
-            # prefilter for reference
-            a = 0.1
-            self.z_ref_filt = (1-a) * self.z_ref_filt  + a * self.z_sp
-            vz_ref = self.pid_z.compute(self.z_ref_filt, self.z_mv, dt)
-            self.mot_speed = self.mot_speed_hover + \
-                        self.pid_vz.compute(vz_ref, self.vz_mv, dt)
-
-            self.dwz = self.pid_yaw_rate.compute(self.euler_sp.z, self.euler_rate_mv.z, dt)
-            ########################################################
-            ########################################################
-
-
-            if self.gm_attitude_ctl == 0:
-                # moving masses are used to control attitude
-                # Publish motor velocities
-                mot_speed_msg = Actuators()
-                mot_speed1 = self.mot_speed + self.dwz
-                mot_speed2 = self.mot_speed - self.dwz
-                mot_speed3 = self.mot_speed + self.dwz
-                mot_speed4 = self.mot_speed - self.dwz
-                mot_speed_msg.angular_velocities = [mot_speed1, mot_speed2, mot_speed3, mot_speed4]
-                self.pub_mot.publish(mot_speed_msg)
-            else:
-                # gas motors are used to control attitude
-                # publish referent motor velocity to attitude controller
-                mot_speed_msg = Float32(self.mot_speed)
-                self.mot_ref_pub.publish(mot_speed_msg)
+	      self.dwz = self.pid_yaw_rate.compute(self.euler_sp.z, self.euler_rate_mv.z, dt)
+	      ########################################################
+	      ########################################################
 
 
-            # Publish PID data - could be useful for tuning
-            self.pub_pid_z.publish(self.pid_z.create_msg())
-            self.pub_pid_vz.publish(self.pid_vz.create_msg())
+	      if self.gm_attitude_ctl == 0:
+		  # moving masses are used to control attitude
+		  # Publish motor velocities
+		  mot_speed_msg = Actuators()
+		  mot_speed1 = self.mot_speed + self.dwz
+		  mot_speed2 = self.mot_speed - self.dwz
+		  mot_speed3 = self.mot_speed + self.dwz
+		  mot_speed4 = self.mot_speed - self.dwz
+		  mot_speed_msg.angular_velocities = [mot_speed1, mot_speed2, mot_speed3, mot_speed4]
+		  self.pub_mot.publish(mot_speed_msg)
+	      else:
+		  # gas motors are used to control attitude
+		  # publish referent motor velocity to attitude controller
+		  mot_speed_msg = Float32(self.mot_speed)
+		  self.mot_ref_pub.publish(mot_speed_msg)
+
+
+	      # Publish PID data - could be useful for tuning
+	      self.pub_pid_z.publish(self.pid_z.create_msg())
+	      self.pub_pid_vz.publish(self.pid_vz.create_msg())
 
     def pose_cb(self, msg):
         '''

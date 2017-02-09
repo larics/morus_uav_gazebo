@@ -94,7 +94,7 @@ void BaseAttitude2Motion::onIceMsg(const morus_uav_ros_msgs::GmStatusPtr& msg)//
     //std::cerr << "Out of Range error: " << oor.what() << '\n';
     ROS_ERROR("Failed to access force at motor ID = %n. Supported IDs include 1-front, 2-right, 3-back, 4-left",id);
   }
-}
+} 
 
 void BaseAttitude2Motion::onUpdate()
 {
