@@ -130,7 +130,7 @@ void GMStatus::OnUpdate()
   this->gm_status_msg.header.stamp.sec = cur_time.sec;
   this->gm_status_msg.header.stamp.nsec = cur_time.nsec;
   this->gm_status_msg.motor_id = atoi(this->gm_ID_.c_str());
-  this->gm_status_msg.can_timestamp = 1;
+  //this->gm_status_msg.can_timestamp = 1;
   
   // For some reason one cannot simple gather force on rotor link
   // TO DO: Check why this is not working

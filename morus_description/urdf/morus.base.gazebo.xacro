@@ -25,7 +25,7 @@
     <plugin filename="libmorus_gazebo_base_attitude2motion.so" name="attitude2motion">
       <robotNamespace>$(arg name)</robotNamespace>
       <imuTopicName>/morus/ahrs</imuTopicName>
-      <connectedICEs>/morus/gm_back_status /morus/gm_front_status /morus/gm_left_status /morus/gm_right_status</connectedICEs>
+      <connectedICEs>/morus/gm_back_status /morus/gm_front_status /morus/gm_left_status /morus/gm_right_status /morus/collectiveThrust</connectedICEs>
     </plugin>
   </gazebo>
   

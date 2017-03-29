@@ -82,7 +82,7 @@ void BatteryStatus::OnUpdate()
     this->battery_status_msg.header.stamp.sec = cur_time.sec;
     this->battery_status_msg.header.stamp.nsec = cur_time.nsec;
 
-    this->battery_status_msg.can_timestamp = 1;
+    //this->battery_status_msg.can_timestamp = 1;
     this->battery_status_msg.battery_id = atoi(this->battery_ID_.c_str());           //11-front arm, 12-right arm, 13-back arm, 14-left arm
     this->battery_status_msg.voltage = 12;              // battery voltage (V)
     this->battery_status_msg.current =100;		// battery current (A)

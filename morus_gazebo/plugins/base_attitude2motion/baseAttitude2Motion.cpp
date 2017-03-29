@@ -103,9 +103,9 @@ void BaseAttitude2Motion::onUpdate()
   math::Vector3 C_linear_velocity_W_C = link_->GetRelativeLinearVel();
   //     30kg*9.81m/s^2*sin(15deg)
   // B = -------------------------    <--- wind resistance
-  //             (10 m/s)^2
-  double B = 30*9.81*0.2588190451/100;
-  math::Vector3 C_drag_W_C(B*C_linear_velocity_W_C[0]*C_linear_velocity_W_C[0],B*C_linear_velocity_W_C[1]*C_linear_velocity_W_C[1],B*C_linear_velocity_W_C[2]*C_linear_velocity_W_C[2]);
+  //             (1 m/s)^2*4
+  double B = -30*9.81*0.2588190451/4;
+  math::Vector3 C_drag_W_C(B*C_linear_velocity_W_C[0]*fabs(C_linear_velocity_W_C[0]),B*fabs(C_linear_velocity_W_C[1])*C_linear_velocity_W_C[1],B*fabs(C_linear_velocity_W_C[2])*C_linear_velocity_W_C[2]);
   //Apply the force
   link_->AddRelativeForce(C_drag_W_C);
   // This function is called every Gazebo update cycle to apply forces and rotation to the body

@@ -17,15 +17,15 @@ class HeightControl:
     '''
     Class implements ROS node for cascade (z, vz) PID control for MAV height.
     Subscribes to:
-        /morus/pose       - used to extract z-position of the vehicle
-        /morus/velocity   - used to extract vz of the vehicle
-        /morus/pos_ref    - used to set the reference for z-position
-        /morus/vel_ref    - used to set the reference for vz-position (useful for testing velocity controller)
+        pose       - used to extract z-position of the vehicle
+        velocity   - used to extract vz of the vehicle
+        pos_ref    - used to set the reference for z-position
+        vel_ref    - used to set the reference for vz-position (useful for testing velocity controller)
 
     Publishes:
-        /morus/mot_vel_ref  - referent value for thrust in terms of motor velocity (rad/s)
-        /morus/pid_z        - publishes PID-z data - referent value, measured value, P, I, D and total component (useful for tuning params)
-        /morus/pid_vz        - publishes PID-vz data - referent value, measured value, P, I, D and total component (useful for tuning params)
+        mot_vel_ref  - referent value for thrust in terms of motor velocity (rad/s)
+        pid_z        - publishes PID-z data - referent value, measured value, P, I, D and total component (useful for tuning params)
+        pid_vz        - publishes PID-vz data - referent value, measured value, P, I, D and total component (useful for tuning params)
 
     Dynamic reconfigure is used to set controller params online.
     '''
@@ -135,8 +135,9 @@ class HeightControl:
 		  print dt
 
 	      self.t_old = t
-
-	      self.mot_speed_hover = 427
+	      #Corrections for HIL
+	      #self.mot_speed_hover = 427
+	      self.mot_speed_hover = 280
 	      # prefilter for reference
 	      a = 0.1
 	      self.z_ref_filt = (1-a) * self.z_ref_filt  + a * self.z_sp
