@@ -21,10 +21,10 @@
     <!-- load the controllers -->
     <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
       output="screen" ns="$(arg namespace)"  args="joint_state_controller
-		  movable_mass_0_position_controller
-		  movable_mass_1_position_controller 
-		  movable_mass_2_position_controller 
-		  movable_mass_3_position_controller">
+		  angle_tilt_0_controller
+		  angle_tilt_1_controller 
+		  angle_tilt_2_controller 
+		  angle_tilt_3_controller">
     <remap from="/robot_description" to="$(arg namespace)/robot_description"/>
     </node>
     
@@ -38,12 +38,5 @@
     <node pkg="morus_control" type="mass_ctl_attitude.py" name="mass_ctl_attitude" output="screen"  ns="$(arg namespace)">
     </node>
   </group>
-  
 
-  <!--
-  <node pkg="rosbag" type="record" name="rosbag_rec" args="/morus/sensors/pose1 /morus/velocity /morus/imu /morus/euler /morus/movable_mass_0_position_controller/state /morus/movable_mass_1_position_controller/state/morus/movable_mass_1_position_controller/state /morus/movable_mass_3_position_controller/state /morus/pid_roll_rate /morus/pid_roll /morus/pid_pitch_rate /morus/pid_pitch /morus/pid_z /morus/pid_vz"
-   />
-  -->
 </launch>
-
-

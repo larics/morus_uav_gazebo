@@ -102,6 +102,43 @@
     </gazebo>
   </xacro:macro>
 
+  <!-- Macro file for tilted props. It defines joint between prop and body, and link which defines actual joint. Stick
+  is defined in other macro file-->
+  <xacro:macro name="tilt" params="parent motor_number x_axis y_axis color *origin">
+    <joint name="tilt_${motor_number}_joint" type="revolute">
+      <xacro:insert_block name="origin"/>
+      <axis xyz="${x_axis} ${y_axis} 0"/>
+      <parent link="${parent}"/>
+      <child link="tilt_${motor_number}"/>
+      <limit lower="-0.785398163" upper="0.785398163" effort="10000" velocity="20"/>
+    </joint>
+    <link name="tilt_${motor_number}">
+      <visual>
+        <geometry>
+          <cylinder length="0.1" radius="0.05" />
+        </geometry>
+      </visual>
+      <collision>
+        <xacro:insert_block name="origin" />
+        <geometry>
+            <cylinder length="0.1" radius="0.05" />
+        </geometry>
+      </collision> 
+      <inertial>
+          <xacro:insert_block name="origin" />
+          <mass value="0.1" />
+          <inertia
+            ixx="1.0" ixy="0.0" ixz="0.0"
+            iyy="1.0" iyz="0.0"
+            izz="1.0" />
+      </inertial>
+    </link>
+
+    <gazebo reference="tilt_${motor_number}">
+      <material>Gazebo/${color}</material>
+    </gazebo>
+  </xacro:macro>
+
   <!-- Rotor joint and link -->
   <xacro:macro name="vertical_rotor"
     params="robot_namespace suffix direction motor_constant moment_constant parent mass_rotor radius_rotor time_constant max_rot_velocity motor_number rotor_drag_coefficient rolling_moment_coefficient color *origin *inertia">

@@ -82,6 +82,71 @@
     <xacro:insert_block name="body_inertia" />
   </xacro:multirotor_base_macro>
 
+
+  <!-- Instantiate tilt 0-->
+  <xacro:tilt 
+    motor_number="0" 
+    parent="base_link"
+    color="Red"
+    x_axis="1"
+    y_axis="0">
+    <origin xyz="${arm_length+arm_offset} 0 0" rpy="0 0 0" />
+  </xacro:tilt>
+
+  <!-- Instantiate tilt 1 -->
+  <xacro:tilt 
+    motor_number="1" 
+    parent="base_link"
+    color="Blue"
+    x_axis="0"
+    y_axis="1">
+    <origin xyz="0 ${arm_length+arm_offset} 0" rpy="0 0 0" />
+  </xacro:tilt>
+
+
+  <!-- Instantiate tilt 2-->
+  <xacro:tilt 
+    motor_number="2" 
+    parent="base_link"
+    color="Blue"
+    x_axis="-1"
+    y_axis="0">
+    <origin xyz="${-(arm_length+arm_offset)} 0 0" rpy="0 0 0" />
+  </xacro:tilt>
+
+
+  <!-- Instantiate tilt 3 -->
+  <xacro:tilt 
+    motor_number="3" 
+    parent="base_link"
+    color="Blue"
+    x_axis="0"
+    y_axis="-1">
+    <origin xyz="0 ${-(arm_length+arm_offset)} 0" rpy="0 0 0" />
+  </xacro:tilt>
+
+
+  <xacro:transmisija
+    trans_number="0"
+    joint_name="tilt_0_joint">
+  </xacro:transmisija>
+
+  <xacro:transmisija
+    trans_number="1"
+    joint_name="tilt_1_joint">
+  </xacro:transmisija>
+
+  <xacro:transmisija
+    trans_number="2"
+    joint_name="tilt_2_joint">
+  </xacro:transmisija>
+
+  <xacro:transmisija
+    trans_number="3"
+    joint_name="tilt_3_joint">
+  </xacro:transmisija>
+
+
   <!-- Instantiate rotors -->
   <xacro:vertical_rotor
     robot_namespace="$(arg name)"
@@ -89,7 +154,7 @@
     direction="cw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
-    parent="base_link"
+    parent="tilt_0"
     mass_rotor="${mass_rotor}"
     radius_rotor="${radius_rotor}"
     time_constant="${time_constant}"
@@ -98,7 +163,7 @@
     rotor_drag_coefficient="${rotor_drag_coefficient}"
     rolling_moment_coefficient="${rolling_moment_coefficient}"
     color="Red">
-    <origin xyz="${arm_length+arm_offset} 0 ${propeler_offset}" rpy="0 0 0" />
+    <origin xyz="0 0 ${propeler_offset}" rpy="0 0 0" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
@@ -108,7 +173,7 @@
     direction="ccw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
-    parent="base_link"
+    parent="tilt_1"
     mass_rotor="${mass_rotor}"
     radius_rotor="${radius_rotor}"
     time_constant="${time_constant}"
@@ -117,7 +182,7 @@
     rotor_drag_coefficient="${rotor_drag_coefficient}"
     rolling_moment_coefficient="${rolling_moment_coefficient}"
     color="Blue">
-    <origin xyz="0 ${arm_length+arm_offset} ${propeler_offset}" rpy="0 0 0" />
+    <origin xyz="0 0 ${propeler_offset}" rpy="0 0 0" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
@@ -127,7 +192,7 @@
     direction="cw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
-    parent="base_link"
+    parent="tilt_2"
     mass_rotor="${mass_rotor}"
     radius_rotor="${radius_rotor}"
     time_constant="${time_constant}"
@@ -136,7 +201,7 @@
     rotor_drag_coefficient="${rotor_drag_coefficient}"
     rolling_moment_coefficient="${rolling_moment_coefficient}"
     color="Blue">
-    <origin xyz="${-(arm_length+arm_offset)} 0 ${propeler_offset}" rpy="0 0 0" />
+    <origin xyz="0 0 ${propeler_offset}" rpy="0 0 0" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
@@ -146,7 +211,7 @@
     direction="ccw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
-    parent="base_link"
+    parent="tilt_3"
     mass_rotor="${mass_rotor}"
     radius_rotor="${radius_rotor}"
     time_constant="${time_constant}"
@@ -155,93 +220,10 @@
     rotor_drag_coefficient="${rotor_drag_coefficient}"
     rolling_moment_coefficient="${rolling_moment_coefficient}"
     color="Blue">
-    <origin xyz="0 ${-(arm_length+arm_offset)} ${propeler_offset}" rpy="0 0 0" />
+    <origin xyz="0 0 ${propeler_offset}" rpy="0 0 0" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
-
-  <!-- Instantiate movable mass 0-->
-  <xacro:movable_mass 
-    mass_number="0" 
-    parent="base_link"
-    mass="${movable_mass_mass}"
-    dimension="${movable_mass_dimension}"
-    color="Red"
-    x_axis="1"
-    y_axis="0"
-    z_axis="0"
-    orientation="${PI}">
-    <origin xyz="${(arm_length/2+arm_offset)} 0.0 ${movable_mass_offset}" rpy="0 0 0" />
-    <xacro:insert_block name="movable_mass_inertia"/>
-  </xacro:movable_mass>
-
-  <!-- Instantiate movable mass 1 -->
-  <xacro:movable_mass 
-    mass_number="1" 
-    parent="base_link"
-    mass="${movable_mass_mass}"
-    dimension="${movable_mass_dimension}"
-    color="Blue"
-    x_axis="0"
-    y_axis="1"
-    z_axis="0"
-    orientation="${PI/2}">
-    <origin xyz="0.0 ${(arm_length/2+arm_offset)} ${movable_mass_offset}" rpy="0 0 0" />
-    <xacro:insert_block name="movable_mass_inertia"/>
-  </xacro:movable_mass>
-
-
-  <!-- Instantiate movable mass 2-->
-  <xacro:movable_mass 
-    mass_number="2" 
-    parent="base_link"
-    mass="${movable_mass_mass}"
-    dimension="${movable_mass_dimension}"
-    color="Blue"
-    x_axis="-1"
-    y_axis="0"
-    z_axis="0"
-    orientation="${PI}">>
-    <origin xyz="${-(arm_length/2+arm_offset)} 0.0 ${movable_mass_offset}" rpy="0 0 0" />
-    <xacro:insert_block name="movable_mass_inertia"/>
-  </xacro:movable_mass>
-
-
-  <!-- Instantiate movable mass 3 -->
-  <xacro:movable_mass 
-    mass_number="3" 
-    parent="base_link"
-    mass="${movable_mass_mass}"
-    dimension="${movable_mass_dimension}"
-    color="Blue"
-    x_axis="0"
-    y_axis="-1"
-    z_axis="0"
-    orientation="${PI/2}">>
-    <origin xyz="0.0 ${-(arm_length/2+arm_offset)} ${movable_mass_offset}" rpy="0 0 0" />
-    <xacro:insert_block name="movable_mass_inertia"/>
-  </xacro:movable_mass>
-
-
-  <xacro:transmisija
-    trans_number="0"
-    joint_name="stick_to_movable_mass_0">
-  </xacro:transmisija>
-
-  <xacro:transmisija
-    trans_number="1"
-    joint_name="stick_to_movable_mass_1">
-  </xacro:transmisija>
-
-  <xacro:transmisija
-    trans_number="2"
-    joint_name="stick_to_movable_mass_2">
-  </xacro:transmisija>
-
-  <xacro:transmisija
-    trans_number="3"
-    joint_name="stick_to_movable_mass_3">
-  </xacro:transmisija>
 
   <xacro:property name="land_gear_inertia">
     <inertia
