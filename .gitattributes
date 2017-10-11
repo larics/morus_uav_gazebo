@@ -1,3 +1,4 @@
 morus_description/meshes/MORUS_UAV_without_mass.dae filter=lfs diff=lfs merge=lfs -text
 morus_description/meshes/propeller_cw.dae filter=lfs diff=lfs merge=lfs -text
 morus_description/meshes/propeller_ccw.dae filter=lfs diff=lfs merge=lfs -text
+morus_description/meshes/morus_uav_final.dae filter=lfs diff=lfs merge=lfs -text
