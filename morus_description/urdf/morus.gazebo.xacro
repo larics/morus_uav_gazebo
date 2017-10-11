@@ -129,5 +129,9 @@
     <origin xyz="-0.0 0.0 0" rpy="0.0 0.0 0.0" />
   </xacro:odometry_plugin_macro>
 
+  <gazebo reference="base_link">
+    <dampingFactor>0.0003</dampingFactor>
+  </gazebo>
+
 </robot>
 
