@@ -5,14 +5,15 @@
   It seems that the xacro:property does not allow to use substitution args. Therefore, instead xacro parameter ${namespace}, subsitution argument is used $(arg name). This is 
   <xacro:property name="namespace" value="$(arg name)" />
   -->
-
+  
   <gazebo>
     <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
       <robotNamespace>/morus</robotNamespace>
+      <robotParam>/morus/robot_description </robotParam>
       <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
     </plugin>
   </gazebo>
-
+  
   <xacro:property name="enable_bag_plugin" value="false" />
   <xacro:property name="bag_file" value="morus.bag" />
 
@@ -24,7 +25,7 @@
   <gazebo>
     <plugin filename="libhector_gazebo_ros_imu.so" name="imu_ros">
       <robotNamespace>$(arg name)</robotNamespace>
-      <bodyName>imu_link</bodyName> <!-- (string, required): name of the body which holds the IMU sensor -->
+      <bodyName>base_link</bodyName> <!-- (string, required): name of the body which holds the IMU sensor -->
       <topicName>imu</topicName> <!-- (string): name of the sensor output topic and prefix of service names (defaults to imu) -->
       <accelOffset>0.0 0.0 0.0</accelOffset> <!-- (Vector3): constant acceleration offset -->
       <accelDrift>0.0 0.0 0.0</accelDrift> <!-- (Vector3): standard deviation of the acceleration drift error -->
@@ -67,21 +68,33 @@
     <gazebo>
     <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_1">
       <gmID> 1 </gmID>
+      <linkName>rotor_0</linkName>
+      <jointName>rotor_0_joint</jointName>
+      <motorConstant>0.000456874</motorConstant>
     </plugin>
   </gazebo>
   <gazebo>
     <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_22">
       <gmID> 2 </gmID>
+      <linkName>rotor_1</linkName>
+      <jointName>rotor_1_joint</jointName>
+      <motorConstant>0.000456874</motorConstant>
     </plugin>
   </gazebo>
   <gazebo>
     <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_13">
       <gmID> 3 </gmID>
+      <linkName>rotor_2</linkName>
+      <jointName>rotor_2_joint</jointName>
+      <motorConstant>0.000456874</motorConstant>
     </plugin>
   </gazebo>
   <gazebo>
     <plugin filename="libmorus_gazebo_gm_status.so" name="gm_status_14">
       <gmID> 4 </gmID>
+      <linkName>rotor_3</linkName>
+      <jointName>rotor_3_joint</jointName>
+      <motorConstant>0.000456874</motorConstant>
     </plugin>
   </gazebo>
   
@@ -89,6 +102,7 @@
   <xacro:odometry_plugin_macro
     namespace="$(arg name)"
     odometry_sensor_suffix="1"
+    child_frame_id="base"
     parent_link="base_link"
     pose_topic="pose"
     pose_with_covariance_topic="pose_with_covariance"

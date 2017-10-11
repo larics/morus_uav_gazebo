@@ -17,10 +17,10 @@ class VelocityPublisher:
         self.vel_msg = TwistStamped()
         self.euler = Vector3Stamped()
 
-        self.vel_pub = rospy.Publisher('/morus/velocity', TwistStamped, queue_size=1)
-        self.euler_pub = rospy.Publisher('/morus/euler', Vector3Stamped, queue_size=1)
-        rospy.Subscriber('/morus/pose_with_covariance', PoseWithCovarianceStamped, self.pose_gt_cb)
-        rospy.Subscriber('/morus/imu', Imu, self.imu_cb)
+        self.vel_pub = rospy.Publisher('velocity', TwistStamped, queue_size=1)
+        self.euler_pub = rospy.Publisher('euler', Vector3Stamped, queue_size=1)
+        rospy.Subscriber('pose_with_covariance', PoseWithCovarianceStamped, self.pose_gt_cb)
+        rospy.Subscriber('imu', Imu, self.imu_cb)
         rospy.sleep(0.1)
 
     def run(self):

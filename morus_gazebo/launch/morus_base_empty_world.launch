@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+
+
+
+<launch>
+
+  <!-- these are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="false"/>
+  <arg name="gui" default="true"/>
+  <arg name="headless" default="false"/>
+  <arg name="namespace" default="morus"/>
+  <arg name="debug" default="false"/>
+  <arg name="enable_logging" default="false"/>
+  <arg name="enable_ground_truth" default="true"/>
+  <arg name="log_file" default="morus"/>
+
+
+  <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find morus_gazebo)/worlds/morus.world"/>
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="$(arg use_sim_time)"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+
+  <include file="$(find morus_gazebo)/launch/spawn_morus_base.launch" >
+    <arg name="x" value="0" />
+    <arg name="y" value="0" />
+  </include>
+  
+  <!-- Publish IMU in NED frame -->
+  <node pkg="tf" type="static_transform_publisher" name="imu_static_tf" args="0 0 0  0.70711 0.70711 0 0  odom local  1"/>
+  <node pkg="tf" type="static_transform_publisher" name="world_ned_static_tf" args="0 0 0  0.70711 0.70711 0 0  world world_ned  1"/>
+  
+  <!-- load configuration 
+  <rosparam command="load" file="$(find joint_state_controller)/joint_state_controller.yaml" ns="$(arg namespace)"/> 
+  <node name="joint_state_controller_spawner" pkg="controller_manager" type="spawner" output="screen" args="joint_state_controller" ns="$(arg namespace)"/>
+  -->
+  
+</launch>
+
+

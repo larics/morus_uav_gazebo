@@ -1,0 +1,80 @@
+<?xml version="1.0"?>
+
+<robot name="morus" xmlns:xacro="http://ros.org/wiki/xacro">
+  <!--
+  It seems that the xacro:property does not allow to use substitution args. Therefore, instead xacro parameter ${namespace}, subsitution argument is used $(arg name). This is 
+  <xacro:property name="namespace" value="$(arg name)" />
+  -->
+  
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>/morus</robotNamespace>
+       <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+    </plugin>
+  </gazebo>
+  
+  <xacro:property name="enable_bag_plugin" value="false" />
+  <xacro:property name="bag_file" value="morus.bag" />
+
+  <!-- Instantiate morus "mechanics" -->
+  <xacro:include filename="$(find morus_description)/urdf/morus.base.urdf.xacro" />
+  <xacro:include filename="$(find rotors_description)/urdf/component_snippets.xacro" />
+  
+  <!-- Attitude2Motion plugin -->
+  <gazebo>
+    <plugin filename="libmorus_gazebo_base_attitude2motion.so" name="attitude2motion">
+      <robotNamespace>$(arg name)</robotNamespace>
+      <imuTopicName>/morus/ahrs</imuTopicName>
+      <connectedICEs>/morus/gm_back_status /morus/gm_front_status /morus/gm_left_status /morus/gm_right_status /morus/collectiveThrust</connectedICEs>
+    </plugin>
+  </gazebo>
+  
+  <!-- Hector gazebo plugins ==> GPS -->
+  <gazebo>      
+    <plugin name="quadrotor_gps_sim" filename="libhector_gazebo_ros_gps.so">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>4.0</updateRate>
+      <bodyName>base_link</bodyName>
+      <topicName>fix</topicName>
+      <velocityTopicName>fix_vel</velocityTopicName>
+      <drift>5.0 5.0 5.0</drift>
+      <gaussianNoise>0.1 0.1 0.1</gaussianNoise>
+      <velocityDrift>0 0 0</velocityDrift>
+      <velocityGaussianNoise>0.1 0.1 0.1</velocityGaussianNoise>
+  <!--interface:position name="gps_position"/-->
+    </plugin>
+  </gazebo>
+  
+  <!-- Mount first generic pose sensor-->
+  <xacro:odometry_plugin_macro
+    namespace="$(arg name)"
+    odometry_sensor_suffix="1"
+    child_frame_id="odom"
+    parent_link="base_link"
+    pose_topic="pose"
+    pose_with_covariance_topic="pose_with_covariance"
+    position_topic="position"
+    transform_topic="transform"
+    odometry_topic="odometry"
+    parent_frame_id="world"
+    mass_odometry_sensor="0.01"
+    measurement_divisor="10"
+    measurement_delay="10"
+    unknown_delay="0.0"
+    noise_normal_position="0.0 0.0 0.0"
+    noise_normal_quaternion="0.0 0.0 0.0"
+    noise_normal_linear_velocity="0 0 0"
+    noise_normal_angular_velocity="0 0 0"
+    noise_uniform_position="0 0 0"
+    noise_uniform_quaternion="0 0 0"
+    noise_uniform_linear_velocity="0 0 0"
+    noise_uniform_angular_velocity="0 0 0"
+    enable_odometry_map="false"
+    odometry_map=""
+    image_scale="0.1">
+    <inertia ixx="0.00001" ixy="0.0" ixz="0.0" iyy="0.00001" iyz="0.0" izz="0.00001" /> <!-- [kg m^2] [kg m^2] [kg m^2] [kg m^2] [kg m^2] [kg m^2] -->
+    <origin xyz="-0.0 0.0 0" rpy="0.0 0.0 0.0" />
+  </xacro:odometry_plugin_macro>
+
+</robot>
+

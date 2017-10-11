@@ -100,21 +100,21 @@ class AttitudeControl:
 
         self.t_old = 0
 
-        rospy.Subscriber('/morus/imu', Imu, self.ahrs_cb)
-        rospy.Subscriber('/morus/mot_vel_ref', Float32, self.mot_vel_ref_cb)
-        rospy.Subscriber('/morus/euler_ref', Vector3, self.euler_ref_cb)
+        rospy.Subscriber('imu', Imu, self.ahrs_cb)
+        rospy.Subscriber('mot_vel_ref', Float32, self.mot_vel_ref_cb)
+        rospy.Subscriber('euler_ref', Vector3, self.euler_ref_cb)
         rospy.Subscriber('/clock', Clock, self.clock_cb)
 
-        self.pub_mass0 = rospy.Publisher('/morus/movable_mass_0_position_controller/command', Float64, queue_size=1)
-        self.pub_mass1 = rospy.Publisher('/morus/movable_mass_1_position_controller/command', Float64, queue_size=1)
-        self.pub_mass2 = rospy.Publisher('/morus/movable_mass_2_position_controller/command', Float64, queue_size=1)
-        self.pub_mass3 = rospy.Publisher('/morus/movable_mass_3_position_controller/command', Float64, queue_size=1)
-        self.pub_pid_roll = rospy.Publisher('/morus/pid_roll', PIDController, queue_size=1)
-        self.pub_pid_roll_rate = rospy.Publisher('/morus/pid_roll_rate', PIDController, queue_size=1)
-        self.pub_pid_pitch = rospy.Publisher('/morus/pid_pitch', PIDController, queue_size=1)
-        self.pub_pid_pitch_rate = rospy.Publisher('/morus/pid_pitch_rate', PIDController, queue_size=1)
-        self.pub_pid_yaw = rospy.Publisher('/morus/pid_yaw', PIDController, queue_size=1)
-        self.pub_pid_yaw_rate = rospy.Publisher('/morus/pid_yaw_rate', PIDController, queue_size=1)
+        self.pub_mass0 = rospy.Publisher('movable_mass_0_position_controller/command', Float64, queue_size=1)
+        self.pub_mass1 = rospy.Publisher('movable_mass_1_position_controller/command', Float64, queue_size=1)
+        self.pub_mass2 = rospy.Publisher('movable_mass_2_position_controller/command', Float64, queue_size=1)
+        self.pub_mass3 = rospy.Publisher('movable_mass_3_position_controller/command', Float64, queue_size=1)
+        self.pub_pid_roll = rospy.Publisher('/pid_roll', PIDController, queue_size=1)
+        self.pub_pid_roll_rate = rospy.Publisher('pid_roll_rate', PIDController, queue_size=1)
+        self.pub_pid_pitch = rospy.Publisher('pid_pitch', PIDController, queue_size=1)
+        self.pub_pid_pitch_rate = rospy.Publisher('pid_pitch_rate', PIDController, queue_size=1)
+        self.pub_pid_yaw = rospy.Publisher('pid_yaw', PIDController, queue_size=1)
+        self.pub_pid_yaw_rate = rospy.Publisher('pid_yaw_rate', PIDController, queue_size=1)
         self.cfg_server = Server(MavAttitudeCtlParamsConfig, self.cfg_callback)
 
     def run(self):
@@ -141,48 +141,51 @@ class AttitudeControl:
         while not rospy.is_shutdown():
             #self.ros_rate.sleep()
             rospy.sleep(0.01)
+	    if not self.start_flag:
+	      print "Waiting for the first IMU measurement."
+	      rospy.sleep(0.5)
+	    else:
+	      clock_now = self.clock
+	      dt_clk = (clock_now.clock - clock_old.clock).to_sec()
 
-            clock_now = self.clock
-            dt_clk = (clock_now.clock - clock_old.clock).to_sec()
+	      clock_old = clock_now
+	      if dt_clk > (1.0 / self.rate + 0.005):
+		  self.count += 1
+		  print self.count, ' - ',  dt_clk
 
-            clock_old = clock_now
-            if dt_clk > (1.0 / self.rate + 0.005):
-                self.count += 1
-                print self.count, ' - ',  dt_clk
+	      if dt_clk < (1.0 / self.rate - 0.005):
+		  self.count += 1
+		  print self.count, ' - ',  dt_clk
 
-            if dt_clk < (1.0 / self.rate - 0.005):
-                self.count += 1
-                print self.count, ' - ',  dt_clk
+	      roll_rate_sv = self.pid_roll.compute(self.euler_sp.x, self.euler_mv.x, dt_clk)
+	      # roll rate pid compute
+	      dy_roll = self.pid_roll_rate.compute(roll_rate_sv, self.euler_rate_mv.x, dt_clk)
 
-            roll_rate_sv = self.pid_roll.compute(self.euler_sp.x, self.euler_mv.x, dt_clk)
-            # roll rate pid compute
-            dy_roll = self.pid_roll_rate.compute(roll_rate_sv, self.euler_rate_mv.x, dt_clk)
+	      pitch_rate_sv = self.pid_pitch.compute(self.euler_sp.y, self.euler_mv.y, dt_clk)
+	      # pitch rate pid compute
+	      dx_pitch = self.pid_pitch_rate.compute(pitch_rate_sv, self.euler_rate_mv.y, dt_clk)
 
-            pitch_rate_sv = self.pid_pitch.compute(self.euler_sp.y, self.euler_mv.y, dt_clk)
-            # pitch rate pid compute
-            dx_pitch = self.pid_pitch_rate.compute(pitch_rate_sv, self.euler_rate_mv.y, dt_clk)
+	      # Publish mass position
+	      mass0_command_msg = Float64()
+	      mass0_command_msg.data = dx_pitch
+	      mass2_command_msg = Float64()
+	      mass2_command_msg.data = -dx_pitch
+	      mass1_command_msg = Float64()
+	      mass1_command_msg.data = -dy_roll
+	      mass3_command_msg = Float64()
+	      mass3_command_msg.data = dy_roll
+	      self.pub_mass0.publish(mass0_command_msg)
+	      self.pub_mass1.publish(mass1_command_msg)
+	      self.pub_mass2.publish(mass2_command_msg)
+	      self.pub_mass3.publish(mass3_command_msg)
 
-            # Publish mass position
-            mass0_command_msg = Float64()
-            mass0_command_msg.data = dx_pitch
-            mass2_command_msg = Float64()
-            mass2_command_msg.data = -dx_pitch
-            mass1_command_msg = Float64()
-            mass1_command_msg.data = -dy_roll
-            mass3_command_msg = Float64()
-            mass3_command_msg.data = dy_roll
-            self.pub_mass0.publish(mass0_command_msg)
-            self.pub_mass1.publish(mass1_command_msg)
-            self.pub_mass2.publish(mass2_command_msg)
-            self.pub_mass3.publish(mass3_command_msg)
-
-            # Publish PID data - could be usefule for tuning
-            self.pub_pid_roll.publish(self.pid_roll.create_msg())
-            self.pub_pid_roll_rate.publish(self.pid_roll_rate.create_msg())
-            self.pub_pid_pitch.publish(self.pid_pitch.create_msg())
-            self.pub_pid_pitch_rate.publish(self.pid_pitch_rate.create_msg())
-            self.pub_pid_yaw.publish(self.pid_yaw.create_msg())
-            self.pub_pid_yaw_rate.publish(self.pid_yaw_rate.create_msg())
+	      # Publish PID data - could be usefule for tuning
+	      self.pub_pid_roll.publish(self.pid_roll.create_msg())
+	      self.pub_pid_roll_rate.publish(self.pid_roll_rate.create_msg())
+	      self.pub_pid_pitch.publish(self.pid_pitch.create_msg())
+	      self.pub_pid_pitch_rate.publish(self.pid_pitch_rate.create_msg())
+	      self.pub_pid_yaw.publish(self.pid_yaw.create_msg())
+	      self.pub_pid_yaw_rate.publish(self.pid_yaw_rate.create_msg())
 
     def mot_vel_ref_cb(self, msg):
         '''

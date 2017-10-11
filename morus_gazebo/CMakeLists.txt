@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 2.8.3 FATAL_ERROR)
 project(morus_gazebo)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+	cmake_modules
 	roscpp
 	std_msgs
 	geometry_msgs
@@ -20,28 +21,28 @@ find_package(catkin REQUIRED COMPONENTS
 ##########################
 ## Gazebo related stuff ##
 ##########################
+if (FALSE)#${gazebo_VERSION_MAJOR} LESS 6
+  include (FindPkgConfig)
+  if (PKG_CONFIG_FOUND)
+    pkg_check_modules(XML libxml-2.0)
+    pkg_check_modules(OGRE OGRE)
+    pkg_check_modules(OGRE-Terrain OGRE-Terrain)
+  else()
+    message(FATAL_ERROR "pkg-config is required; please install it")
+  endif()
 
-include (FindPkgConfig)
-if (PKG_CONFIG_FOUND)
-  pkg_check_modules(XML libxml-2.0)
-  pkg_check_modules(OGRE OGRE)
-  pkg_check_modules(OGRE-Terrain OGRE-Terrain)
-else()
-  message(FATAL_ERROR "pkg-config is required; please install it")
+  # Depend on system install of Gazebo
+  
+  find_package(Boost REQUIRED COMPONENTS thread)
+
+  execute_process(COMMAND
+    pkg-config --variable=plugindir OGRE
+    OUTPUT_VARIABLE OGRE_PLUGIN_PATH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
 endif()
-
-# Depend on system install of Gazebo
 find_package(gazebo REQUIRED)
-find_package(Boost REQUIRED COMPONENTS thread)
-
-execute_process(COMMAND
-  pkg-config --variable=plugindir OGRE
-  OUTPUT_VARIABLE OGRE_PLUGIN_PATH
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-
-
-
+find_package(Eigen REQUIRED)
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
@@ -128,10 +129,10 @@ execute_process(COMMAND
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-INCLUDE_DIRS include launch plugins worlds
+INCLUDE_DIRS include launch plugins worlds ${Eigen_INCLUDE_DIRS}
 	LIBRARIES morus_gazebo
 	CATKIN_DEPENDS geometry_msgs roscpp std_msgs message_runtime sensor_msgs morus_uav_ros_msgs
-	DEPENDS system_lib gazebo_ros 
+	DEPENDS system_lib gazebo_ros eigen
 	)
 
 ###########
@@ -144,6 +145,8 @@ INCLUDE_DIRS include launch plugins worlds
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
+
+include_directories(${Eigen_INCLUDE_DIRS})
 
 ## Declare a C++ library
 # add_library(morus_gazebo
@@ -167,18 +170,24 @@ include_directories(
 #   ${catkin_LIBRARIES}
 # )
 
-link_directories(${GAZEBO_LIBRARY_DIRS} ${OGRE_LIBRARY_DIRS})
-include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${GAZEBO_INCLUDE_DIRS} ${OGRE_INCLUDE_DIRS} ${OGRE-Terrain_INCLUDE_DIRS})
+link_directories(${GAZEBO_LIBRARY_DIRS})# ${OGRE_LIBRARY_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS})# ${Boost_INCLUDE_DIR}  ${OGRE_INCLUDE_DIRS} ${OGRE-Terrain_INCLUDE_DIRS})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
-
-add_library(${PROJECT_NAME}_gm_status plugins/gm_status/GMStatus.cpp)
-target_link_libraries(${PROJECT_NAME}_gm_status ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+add_library(${PROJECT_NAME}_gm_status plugins/gm_status/gmStatus.cpp)
+target_link_libraries(${PROJECT_NAME}_gm_status ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 #add_library(${PROJECT_NAME}_get_pose plugins/get_pose/get_pose.cpp)
 #target_link_libraries(${PROJECT_NAME}_get_pose  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
-add_library(${PROJECT_NAME}_battery_status plugins/battery_status/BatteryStatus.cpp)
-target_link_libraries(${PROJECT_NAME}_battery_status  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+add_library(${PROJECT_NAME}_battery_status plugins/battery_status/batteryStatus.cpp)
+target_link_libraries(${PROJECT_NAME}_battery_status  ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+add_library(${PROJECT_NAME}_base_attitude2motion plugins/base_attitude2motion/baseAttitude2Motion.cpp)
+target_link_libraries(${PROJECT_NAME}_base_attitude2motion  ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+
+add_executable(ned_pose_publisher src/nodes/ned_pose_publisher.cpp)
+target_link_libraries(ned_pose_publisher ${catkin_LIBRARIES})
 #############
 ## Install ##
 #############
