@@ -17,7 +17,7 @@ from datetime import datetime
 
 class PositionControl:
     '''
-    Class implements ROS node for cascade (z, vz) PID control for MAV height.
+    Class implements ROS node for cascade PID control of MAV position and yaw angle.
     Subscribes to:
         /morus/pose       - used to extract z-position of the vehicle
         /morus/velocity   - used to extract vz of the vehicle
@@ -114,8 +114,14 @@ class PositionControl:
         self.pid_y.set_lim_high(5)
         self.pid_y.set_lim_low(-5)
 
-        self.angular_kp_auv = 2.23
-        self.angular_kp_unloaded = 2.67
+        self.pid_yaw.set_kp(1)
+        self.pid_yaw.set_ki(0)
+        self.pid_yaw.set_kd(0)
+
+        self.pid_yaw_rate.set_kp(100)
+        self.pid_yaw_rate.set_ki(0)
+        self.pid_yaw_rate.set_kd(0)
+        
         #########################################################
         #########################################################
       
@@ -148,7 +154,6 @@ class PositionControl:
         rospy.Subscriber('velocity', TwistStamped, self.vel_cb)
         rospy.Subscriber('vel_ref', Vector3, self.vel_ref_cb)
         rospy.Subscriber('pos_ref', Vector3, self.pos_ref_cb)
-        #rospy.Subscriber('euler_ref', Vector3, self.euler_ref_cb)
         rospy.Subscriber('yaw_ref', Float32, self.yaw_ref_cb)
         rospy.Subscriber('imu', Imu, self.ahrs_cb)
         rospy.Subscriber('attitude_rotor_command', Vector3, self.rotor_command_cb)
@@ -160,6 +165,8 @@ class PositionControl:
         self.pub_pid_vx = rospy.Publisher('pid_vx', PIDController, queue_size=1)
         self.pub_pid_y = rospy.Publisher('pid_y', PIDController, queue_size=1)
         self.pub_pid_vy = rospy.Publisher('pid_vy', PIDController, queue_size=1)
+        self.pub_pid_yaw = rospy.Publisher('pid_yaw', PIDController, queue_size=1)
+        self.pub_pid_yaw_rate = rospy.Publisher('pid_yaw_rate', PIDController, queue_size=1)
         
         self.euler_ref_pub = rospy.Publisher('euler_ref', Vector3, queue_size=1)
         self.mot_ref_pub = rospy.Publisher('mot_vel_ref', Float32, queue_size=1)
@@ -216,6 +223,12 @@ class PositionControl:
             roll_ref = math.cos(self.euler_mv.z) * roll_r + math.sin(self.euler_mv.z) * pitch_r;
             pitch_ref = -math.sin(self.euler_mv.z) * roll_r + math.cos(self.euler_mv.z) * pitch_r;
 
+            # yaw control
+            yaw_rate_sv = self.pid_yaw.compute(self.yaw_sp, self.euler_mv.z, self.Ts)
+            # yaw rate pid compute
+            self.yaw_command = self.pid_yaw_rate.compute(yaw_rate_sv, self.euler_rate_mv.z, self.Ts)
+            
+
             mot_speed_msg = Actuators()
             mot_speed1 = self.mot_speed + self.yaw_command 
             mot_speed2 = self.mot_speed - self.yaw_command 
@@ -224,7 +237,7 @@ class PositionControl:
             mot_speed_msg.angular_velocities = [mot_speed1, mot_speed2, mot_speed3, mot_speed4]
             self.pub_mot.publish(mot_speed_msg)
             
-            vec3_msg = Vector3(roll_ref, pitch_ref, self.yaw_sp)
+            vec3_msg = Vector3(roll_ref, pitch_ref, 0)
             self.euler_ref_pub.publish(vec3_msg)
 
             # Publish PID data - could be useful for tuning
@@ -234,6 +247,8 @@ class PositionControl:
             self.pub_pid_vx.publish(self.pid_vx.create_msg())
             self.pub_pid_y.publish(self.pid_y.create_msg())
             self.pub_pid_vy.publish(self.pid_vy.create_msg())
+            self.pub_pid_yaw.publish(self.pid_yaw.create_msg())
+            self.pub_pid_yaw_rate.publish(self.pid_yaw_rate.create_msg())
 
     def pos_cb(self, msg):
         '''
