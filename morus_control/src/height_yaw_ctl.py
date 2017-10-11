@@ -135,9 +135,9 @@ class HeightControl:
 		  print dt
 
 	      self.t_old = t
-	      #Corrections for HIL
-	      #self.mot_speed_hover = 427
-	      self.mot_speed_hover = 280
+	      
+	      self.mot_speed_hover = 427
+	      
 	      # prefilter for reference
 	      a = 0.1
 	      self.z_ref_filt = (1-a) * self.z_ref_filt  + a * self.z_sp
