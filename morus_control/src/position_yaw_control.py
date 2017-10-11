@@ -90,13 +90,13 @@ class PositionControl:
         self.pid_vz.set_lim_high(350)   # max velocity of a motor
         self.pid_vz.set_lim_low(-350)   # min velocity of a motor
 
-        self.pid_vx.set_kp(0.2)
+        self.pid_vx.set_kp(0.1)
         self.pid_vx.set_ki(0.0)
         self.pid_vx.set_kd(0)
         self.pid_vx.set_lim_high(0.2)
         self.pid_vx.set_lim_low(-0.2)
 
-        self.pid_vy.set_kp(0.2)
+        self.pid_vy.set_kp(0.1)
         self.pid_vy.set_ki(0.0)
         self.pid_vy.set_kd(0)
         self.pid_vy.set_lim_high(0.2)
