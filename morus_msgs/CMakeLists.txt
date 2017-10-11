@@ -17,6 +17,7 @@ cfg/MavCtlParams.cfg
 cfg/MavZCtlParams.cfg
 cfg/MavXYCtlParams.cfg
 cfg/MavAttitudeCtlParams.cfg
+cfg/MavPosCtlParams.cfg
 )
 
 catkin_package(
