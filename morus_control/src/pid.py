@@ -126,8 +126,6 @@ class PID:
             # implement saturation function and antiwind-up,
             #t = rospy.Time.now()
             #self.dt = (t - self.t_old).to_sec()
-            self.ref = ref
-            self.meas = meas
             error = ref - meas
 
             de = error - self.error_old                         # diff error
