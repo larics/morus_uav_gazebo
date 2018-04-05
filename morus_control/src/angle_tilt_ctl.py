@@ -21,7 +21,7 @@ class AngleTiltCtl:
         self.odometry = rospy.Subscriber('/morus/odometry', Odometry, self.odometry_cb)
         # initialize publishers
         self.pub_mot = rospy.Publisher('/gazebo/command/motor_speed', Actuators, queue_size=1)
-        self.ros_rate = rospy.Rate(50)
+        self.ros_rate = rospy.Rate(10)
 
         self.z_sp = 0                           # z-position set point
         self.z_ref_filt = 0                     # z ref filtered
@@ -32,8 +32,8 @@ class AngleTiltCtl:
         self.vz_mv = 0                          # vz velocity measured value
         self.pid_vz = PID()                     # pid instance for z-velocity control
 
-        self.euler_mv = Vector3(0, 0, 0)        # measured euler angles
-        self.euler_sp = Vector3(0, 0, 0)        # euler angles referent values
+        self.euler_mv = Vector3(0., 0., 0)        # measured euler angles
+        self.euler_sp = Vector3(0.01,0.01, 0.2)        # euler angles referent values
         self.euler_rate_mv = Vector3(0, 0, 0)   # measured angular velocities
         self.dwz = 0
 
@@ -58,7 +58,7 @@ class AngleTiltCtl:
         self.pid_z.set_kd(2)
 
         # Add parameters for vz-height PID controller
-        self.pid_vz.set_kp(20)
+        self.pid_vz.set_kp(18)
         self.pid_vz.set_ki(0)
         self.pid_vz.set_kd(0)
 
@@ -77,26 +77,54 @@ class AngleTiltCtl:
         self.pitch_rate_PID = PID()
         self.pitch_rate_mv = 0
 
+        self.pitch_PID = PID()
+
+
         # initialize roll rate PID controller
         self.roll_rate_PID = PID()
         self.roll_rate_mv = 0
+
+        self.roll_PID = PID()
 
         # initialize yaw rate PID controller
         self.yaw_rate_PID = PID()
         self.yaw_rate_mv = 0
 
+        self.yaw_PID = PID()
+
         # set PID P, I, D gains for PIDs
-        self.pitch_rate_PID.set_kp(75)
-        self.pitch_rate_PID.set_ki(15)
-        self.pitch_rate_PID.set_kd(2)
+        self.pitch_PID.set_kp(20)
+        self.pitch_PID.set_ki(0)
+        self.pitch_PID.set_kd(0)
 
-        self.roll_rate_PID.set_kp(75)
-        self.roll_rate_PID.set_ki(15)
-        self.roll_rate_PID.set_kd(2)
+        self.pitch_rate_PID.set_kp(1.5)
+        self.pitch_rate_PID.set_ki(1)
+        self.pitch_rate_PID.set_kd(1.5)
 
-        self.yaw_rate_PID.set_kp(5)
-        self.yaw_rate_PID.set_ki(0)
-        self.yaw_rate_PID.set_kd(0)
+        self.pitch_rate_PID.set_lim_high(+50)
+        self.pitch_rate_PID.set_lim_low(-50)
+
+        self.roll_PID.set_kp(20)
+        self.roll_PID.set_ki(0)
+        self.roll_PID.set_kd(0)
+
+        self.roll_rate_PID.set_kp(1.5)
+        self.roll_rate_PID.set_ki(1)
+        self.roll_rate_PID.set_kd(1.5)
+
+        self.roll_rate_PID.set_lim_high(+50)
+        self.roll_rate_PID.set_lim_low(-50)
+
+        self.yaw_PID.set_kp(7)
+        self.yaw_PID.set_ki(0)
+        self.yaw_PID.set_kd(0)
+
+        self.yaw_rate_PID.set_kp(1.5)
+        self.yaw_rate_PID.set_ki(1)
+        self.yaw_rate_PID.set_kd(1.5)
+
+        self.yaw_rate_PID.set_lim_high(+50)
+        self.yaw_rate_PID.set_lim_low(-50)
 
 
     def pose_cb(self, msg):
@@ -181,33 +209,43 @@ class AngleTiltCtl:
 
             self.t_old = t
             self.quat_to_eul_conv(self.qx, self.qy, self.qz, self.qw)
-            print(self.roll, self.pitch, self.yaw)
 
             self.hover_speed = math.sqrt(293/0.000456874/4)
 
             # change in motor speed produced by changing angle reference
-            dwz = self.yaw_rate_PID.compute(self.euler_sp.z, self.euler_mv.z, dt)
-            dwy = self.pitch_rate_PID.compute(self.euler_sp.y, self.euler_mv.y, dt)
-            dwx = self.roll_rate_PID.compute(self.euler_sp.x, self.euler_mv.x, dt)
+
+
+            # roll_rate_ref = self.roll_rate_PID.compute(self.euler_sp.x, self.euler_mv.x, dt)
 
             # change in motor speed caused by height reference
             a = 0.1
             self.z_ref_filt = (1 - a) * self.z_ref_filt + a * self.z_sp
             vz_ref = self.pid_z.compute(self.z_ref_filt, self.z_mv, dt)
             domega_z = self.pid_vz.compute(vz_ref, self.vz_mv, dt)
-            # domega_z = 0
 
-            # motor speeds calculated with respect to height and angle control
-            #if self.z_mv > self.z_sp:
-                #domega_z = - domega_z
-            #else:
-                #pass
-            print(self.z_sp, self.z_mv)
-            motor_speed_1 = self.hover_speed + domega_z + dwz - dwy
-            motor_speed_2 = self.hover_speed + domega_z - dwz + dwx
-            motor_speed_3 = self.hover_speed + domega_z + dwz + dwy
-            motor_speed_4 = self.hover_speed + domega_z - dwz - dwx
+            # roll cascade (first PID -> roll ref, second PID -> roll_rate ref)
+            roll_rate_ref = self.roll_rate_PID.compute(self.euler_sp.x, self.euler_mv.x, dt)
+            dwy = self.roll_PID.compute(roll_rate_ref, self.roll_rate_mv, dt)
+
+            # yaw cascade (first PID -> yaw ref, second PID -> yaw_rate ref)
+            #yaw_rate_ref = self.yaw_rate_PID.compute(self.euler_sp.z, self.euler_mv.z, dt)
+            dwz = self.yaw_PID.compute(self.euler_sp.z, self.euler_mv.z, dt)
+
+            # pitch cascade(first PID -> pitch ref, second PID -> pitch_rate ref)
+            pitch_rate_ref = self.pitch_rate_PID.compute(self.euler_sp.y, self.euler_mv.y, dt)
+            dwx = self.pitch_PID.compute(pitch_rate_ref, self.pitch_rate_mv, dt)
+
+            print("Pitch speed: {}\n Roll speed: {}\n, Yaw speed: {}\n".format(dwy, dwx, dwz))
+            print("Yaw measured_value:{}\n Yaw_reference_value:{}\n".format(self.euler_mv.z, self.euler_sp.z))
+            print("Roll measured_value:{}\n, Roll_reference_value:{}\n".format(self.euler_mv.x, self.euler_sp.x))
+            print("Pitch measured_value:{}\n, Pitch_reference_value:{}\n".format(self.euler_mv.y, self.euler_sp.y))
+
+            motor_speed_1 = self.hover_speed + domega_z + dwz - dwx
+            motor_speed_2 = self.hover_speed + domega_z - dwz + dwy
+            motor_speed_3 = self.hover_speed + domega_z + dwz + dwx
+            motor_speed_4 = self.hover_speed + domega_z - dwz - dwy
             print(motor_speed_1, motor_speed_2, motor_speed_3, motor_speed_4)
+            #print(self.z_sp, self.z_mv)
 
             # publish motor speeds
             motor_speed_msg = Actuators()
@@ -215,7 +253,7 @@ class AngleTiltCtl:
                                                   motor_speed_3, motor_speed_4]
 
             self.pub_mot.publish(motor_speed_msg)
-            self.z_sp = 2
+            self.z_sp = 3
             self.z_mv = self.z
 
 
