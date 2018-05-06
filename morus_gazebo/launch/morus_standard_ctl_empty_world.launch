@@ -40,8 +40,8 @@
 
   <node 
 		pkg="morus_control"
-		type="morus_angle_tilt_ctl.py"
-		name="morus_angle_tilt_ctl"
+		type="morus_standard_ctl.py"
+		name="morus_standard_ctl"
 		output="screen">
   </node>
 

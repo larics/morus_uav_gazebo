@@ -82,9 +82,11 @@ class AngleTiltCtl:
         self.dwz = 0
 
         ########################################
-        # Position control PIDs
-        self.pid_x = PID(4, 1, 2, 0.05, -0.05)
-        self.pid_y = PID(4, 1, 2, 0.05, -0.05)
+        # Position control PIDs -> connect directly to rotors tilt
+        self.pid_x = PID(0.5, 0., 1, 0.05, -0.05)
+        self.pid_vx = PID(1, 0, 1, 0., 0.)
+        self.pid_y = PID(0.5, 0., 1, 0.05, -0.05)
+        self.pid_vy = PID(1, 0., 1., 0., 0.)
 
         # Define PID for height control
         self.z_ref_filt = 0
@@ -97,16 +99,16 @@ class AngleTiltCtl:
         ########################################
 
         # initialize pitch_rate PID controller
-        self.pitch_rate_PID = PID(2, 0.05, 1, 50, -50)
-        self.pitch_PID = PID(75, 0, 1, 150, -150)
+        self.pitch_rate_PID = PID(4, 0.05, 1, 50, -50)
+        self.pitch_PID = PID(75, 0, 1, 50, -50)
 
         # initialize roll rate PID controller
-        self.roll_rate_PID = PID(2, 0.05, 1, 0.5, -0.5)
-        self.roll_PID = PID(75, 0, 5, +150, -150)
+        self.roll_rate_PID = PID(4, 0.05, 1, 50, -50)
+        self.roll_PID = PID(75, 0, 1, 50, -50)
 
         # initialize yaw rate PID controller
-        self.yaw_rate_PID = PID(35, 2, 35, 50, -50)
-        self.yaw_PID = PID(2, 0, 2, 30, -30)
+        self.yaw_rate_PID = PID(35, 2, 35, 150, -150)
+        self.yaw_PID = PID(20, 0, 5, 75, -75)
 
     def pose_cb(self, msg):
         """
@@ -211,6 +213,8 @@ class AngleTiltCtl:
             dt = (t - self.t_old).to_sec()
             if dt > 0.105 or dt < 0.095:
                 print(dt)
+            if dt < 0.01:
+                dt = 0.01
 
             self.t_old = t
             self.quat_to_eul_conv(self.qx, self.qy, self.qz, self.qw)
@@ -225,16 +229,16 @@ class AngleTiltCtl:
 
             ## ATTITUDE CONTROL:
 
-            # roll cascade (first PID -> roll ref, second PID -> roll_rate ref)
-            #self.euler_sp.x = -self.pid_y.compute(self.pose_sp.y, self.pose_mv.y, dt)
-            b = 0.5
-            self.roll_sp_filt = (1 - b) * self.euler_sp.x + b * self.roll_sp_filt
-            roll_rate_ref = self.roll_rate_PID.compute(self.roll_sp_filt, self.euler_mv.x, dt)
+            # roll cascade (first PID -> y ref, second PID -> tilt_roll_rate ref)
+            #self.euler_sp.x = - self.pid_y.compute(self.pose_sp.y, self.pose_mv.y, dt)
+            b = 0.2
+            self.roll_sp_filt =  (1 - b) * self.euler_sp.x + b * self.roll_sp_filt
+            roll_rate_ref = self.roll_rate_PID.compute(self.euler_sp.x, self.euler_mv.x, dt)
             dwx = self.roll_PID.compute(roll_rate_ref, self.euler_rate_mv.x, dt)
 
             # pitch cascade(first PID -> pitch ref, second PID -> pitch_rate ref)
             #self.euler_sp.y = self.pid_x.compute(self.pose_sp.x, self.pose_mv.x, dt)
-            b = 0.5
+            b = 0.3
             self.pitch_sp_filt = (1 - b) * self.euler_sp.y + b * self.pitch_sp_filt
             pitch_rate_ref = self.pitch_rate_PID.compute(self.pitch_sp_filt, self.euler_mv.y, dt)
             dwy = self.pitch_PID.compute(pitch_rate_ref, self.euler_rate_mv.y, dt)
@@ -245,6 +249,12 @@ class AngleTiltCtl:
             yaw_rate_ref = self.yaw_rate_PID.compute(self.yaw_sp_filt, self.euler_mv.z, dt)
             dwz = self.yaw_PID.compute(yaw_rate_ref, self.euler_rate_mv.z, dt)
 
+            # pose control with rotors tilt
+            setpoint_y = prefilter(self.pose_mv.y, 0.2, self.pose_sp.y)
+            tilt_y = self.pid_y.compute(setpoint_y, self.pose_mv.y, dt)
+
+            setpoint_x = prefilter(self.pose_mv.x, 0.2, self.pose_sp.x)
+            tilt_x = self.pid_x.compute(setpoint_x, self.pose_mv.x, dt)
 
             if VERBOSE:
 
@@ -257,17 +267,34 @@ class AngleTiltCtl:
                                                                         self.pose_mv.z,  self.pose_sp.z))
 
             motor_speed_1 = self.hover_speed + domega_z + dwz - dwy
-            motor_speed_2 = self.hover_speed + domega_z - dwz #+ dwx
+            motor_speed_2 = self.hover_speed + domega_z - dwz + dwx
             motor_speed_3 = self.hover_speed + domega_z + dwz + dwy
-            motor_speed_4 = self.hover_speed + domega_z - dwz #- dwx
+            motor_speed_4 = self.hover_speed + domega_z - dwz - dwx
             print(motor_speed_1, motor_speed_2, motor_speed_3, motor_speed_4)
             #print(self.z_sp, self.z_mv)
 
-            if abs(roll_rate_ref - self.euler_rate_mv.x) < 10e-3:
-                dwx = 0
+            #if abs(self.euler_sp.x - self.euler_mv.x) < 10e-4:
+            #    dwx = 0
+            #else:
+            #print("euler_sp.x:{}\neuler_mv.x:{}\n".format(self.euler_sp.x, self.euler_mv.x))
+            print("pose_sp.y:{}\n pose_mv.y:{}\n".format(self.pose_sp.y, self.pose_mv.y))
+            print("pose_sp.x:{}\n pose_mv.x:{}\n".format(self.pose_sp.x, self.pose_mv.x))
+            print("yaw value: {}\n".format(self.euler_mv.z))
+            #print("Difference in setpoint and wanted value: {}".format(self.euler_sp.x - self.euler_mv.x))
+            print("Roll control activated: {}".format(tilt_y))
+            self.pub_roll_tilt0.publish(-tilt_y)
+            self.pub_roll_tilt1.publish(tilt_y)
+            self.pub_pitch_tilt0.publish(tilt_x)
+            self.pub_pitch_tilt1.publish(tilt_x)
 
-            self.pub_roll_tilt0.publish(dwx)
-            self.pub_roll_tilt1.publish(-dwx)
+            #if abs(pitch_rate_ref - self.euler_rate_mv.y) < 10e-3:
+            #   dwy = 0
+            #else:
+            #    print("Pitch tilt controll activated: {}\n".format(dwy),
+            #          "Pitch rate value is: {}".format(self.euler_rate_mv.y),
+            #          "Pitch rate ref is: {}".format(pitch_rate_ref))
+                #self.pub_pitch_tilt0.publish(-dwy)
+                #self.pub_pitch_tilt1.publish(dwy)
 
             # publish motor speeds
             motor_speed_msg = Actuators()
@@ -289,6 +316,10 @@ class AngleTiltCtl:
 
             self.pub_mot.publish(motor_speed_msg)
 
+
+def prefilter(start_val,  coeff_val, setpoint_val):
+
+    return (1 - coeff_val) * setpoint_val + coeff_val * start_val
 
 
 if __name__ == "__main__":

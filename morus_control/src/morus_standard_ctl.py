@@ -257,14 +257,10 @@ class AngleTiltCtl:
                                                                         self.pose_mv.z,  self.pose_sp.z))
 
             motor_speed_1 = self.hover_speed + domega_z + dwz - dwy
-            motor_speed_2 = self.hover_speed + domega_z - dwz #+ dwx
+            motor_speed_2 = self.hover_speed + domega_z - dwz + dwx
             motor_speed_3 = self.hover_speed + domega_z + dwz + dwy
-            motor_speed_4 = self.hover_speed + domega_z - dwz #- dwx
+            motor_speed_4 = self.hover_speed + domega_z - dwz - dwx
             print(motor_speed_1, motor_speed_2, motor_speed_3, motor_speed_4)
-            #print(self.z_sp, self.z_mv)
-
-            if abs(roll_rate_ref - self.euler_rate_mv.x) < 10e-3:
-                dwx = 0
 
             self.pub_roll_tilt0.publish(dwx)
             self.pub_roll_tilt1.publish(-dwx)
@@ -292,6 +288,6 @@ class AngleTiltCtl:
 
 
 if __name__ == "__main__":
-    rospy.init_node('morus_angle_tilt_ctl')
+    rospy.init_node('morus_standard_ctl')
     angle_ctl = AngleTiltCtl()
     angle_ctl.run()

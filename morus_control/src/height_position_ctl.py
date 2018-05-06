@@ -44,7 +44,7 @@ class HeightControl:
         self.pid_z = PID()              # pid instance for z control
 
         self.vz_sp = 0                  # vz velocity set_point
-        self.vz_mv = 0                   # vz velocity measured value
+        self.vz_mv = 0                  # vz velocity measured value
         self.pid_vz = PID()             # pid instance for z-velocity control
 
         self.pid_yaw_rate = PID()

@@ -7,15 +7,15 @@ class PID:
         This class implements a simple PID control algorithm.
     """
 
-    def __init__(self):
+    def __init__(self, kp=0, ki=0, kd=0, lim_high=float("inf"), lim_low=float("inf")):
         """
             Initializes PID gains (proportional - kp, integral - ki, derivative - kd) and control values to zero.
         """
 
         # initialize gains
-        self.kp = 0     # proportional gain
-        self.ki = 0     # integral gain
-        self.kd = 0     # derivative gain
+        self.kp = kp     # proportional gain
+        self.ki = ki     # integral gain
+        self.kd = kd     # derivative gain
 
         # initialize control values
         self.up = 0                     # P part
@@ -23,8 +23,8 @@ class PID:
         self.ui_old = 0                 # I part from previous step
         self.ud = 0                     # D part
         self.u = 0                      # total control value
-        self.lim_high = float("inf")      # control value upper limit
-        self.lim_low = -float("inf")    # control value lower limit
+        self.lim_high = lim_high     # control value upper limit
+        self.lim_low = lim_low   # control value lower limit
 
         # init referent control value (set-value)
         self.ref = 0
@@ -45,6 +45,7 @@ class PID:
 
         # ros message formed when create_msg method is called
         self.pid_msg = PIDController()
+
 
     def reset(self):
         ''' Resets pid algorithm by setting all P,I,D parts to zero'''
