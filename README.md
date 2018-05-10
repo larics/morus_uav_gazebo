@@ -58,6 +58,7 @@ curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.s
 sudo apt-get install git-lfs
 git lfs install
 cd ~/catkin_ws/src
+git clone https://github.com/larics/morus_uav_ros_msgs.git
 git clone https://github.com/larics/morus_uav_gazebo.git
 catkin build
 ```
