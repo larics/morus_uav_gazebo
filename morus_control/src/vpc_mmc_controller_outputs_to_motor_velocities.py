@@ -11,6 +11,7 @@ import math
 from mav_msgs.msg import Actuators
 from datetime import datetime
 from rosgraph_msgs.msg import Clock
+import copy
 
 class MergeControllerOutputs:
 
@@ -24,6 +25,9 @@ class MergeControllerOutputs:
         self.yaw_command = 0.0
         self.vpc_roll_command = 0.0
         self.vpc_pitch_command = 0.0
+        self.motor_noise = Float64MultiArray()
+        for i in range(4):
+            self.motor_noise.data.append(0.0)
 
         self.mot_vel_ref = 0.0
 
@@ -46,6 +50,8 @@ class MergeControllerOutputs:
             self.attitude_command_cb, queue_size=1)
         rospy.Subscriber('mot_vel_ref', Float32, 
             self.motor_velocity_ref_cb, queue_size=1)
+        rospy.Subscriber('motor_noise', Float64MultiArray, 
+            self.motor_noise_callback, queue_size=1)
 
     def run(self):
         while (not self.attitude_command_received_flag) and (not rospy.is_shutdown()):
@@ -66,10 +72,10 @@ class MergeControllerOutputs:
             mot2 = self.mot_vel_ref - self.yaw_command + self.vpc_roll_command
             mot3 = self.mot_vel_ref + self.yaw_command + self.vpc_pitch_command
             mot4 = self.mot_vel_ref - self.yaw_command - self.vpc_roll_command
-            mot1 = self.quantization(mot1, self.quantization_step)
-            mot2 = self.quantization(mot2, self.quantization_step)
-            mot3 = self.quantization(mot3, self.quantization_step)
-            mot4 = self.quantization(mot4, self.quantization_step)
+            mot1 = self.quantization(mot1, self.quantization_step) + self.motor_noise.data[0]
+            mot2 = self.quantization(mot2, self.quantization_step) + self.motor_noise.data[1]
+            mot3 = self.quantization(mot3, self.quantization_step) + self.motor_noise.data[2]
+            mot4 = self.quantization(mot4, self.quantization_step) + self.motor_noise.data[3]
 
             moving_mass_front = self.pitch_command # mm1
             moving_mass_back = -self.pitch_command # mm3
@@ -108,6 +114,10 @@ class MergeControllerOutputs:
 
     def quantization(self, value, step):
         return round(value/step)*step
+
+    def motor_noise_callback(self, msg):
+        for i in  range(4):
+            self.motor_noise.data[i] = msg.data[i]
 
 
 if __name__ == "__main__":
