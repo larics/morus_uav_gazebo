@@ -7,10 +7,18 @@ find_package(catkin REQUIRED COMPONENTS
     std_msgs
     rosgraph_msgs
     genmsg
+    dynamic_reconfigure
 )
 
 find_package(cmake_modules REQUIRED)
 
+generate_dynamic_reconfigure_options(
+    # VPC MMCUAV parameters
+    config/VpcMmcuavZCtlParams.cfg
+    config/VpcMmcuavPositionCtlParams.cfg
+    config/VpcMmcuavAttitudeCtlParams.cfg
+    config/PositionCtlParams.cfg
+    )
 
 catkin_package(
 )

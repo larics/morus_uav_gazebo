@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+
+<launch>
+  <arg name="namespace" default="/morus"/>
+  <arg name="rate" default="100"/>
+
+  <!-- Load joint controller configurations from YAML file to parameter server -->
+  <rosparam file="$(find morus_control)/config/morus_control.yaml" command="load"/>
+
+  <node pkg="morus_control" type="mav_state_pub.py" name="mav_state_pub" output="screen"  ns="$(arg namespace)">
+    <remap from="imu" to="ahrs" />
+  </node>
+  
+  <node pkg="morus_control" type="float2gmStatus.py" name="translator" ns="$(arg namespace)"/>
+  
+  <!-- load the controllers -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+    output="screen" ns="$(arg namespace)"  args="joint_state_controller
+    movable_mass_0_position_controller
+    movable_mass_1_position_controller 
+    movable_mass_2_position_controller 
+    movable_mass_3_position_controller">
+  <remap from="/robot_description" to="$(arg namespace)/robot_description"/>
+  </node>
+    
+  <!-- convert joint states to TF transforms for rviz, etc -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
+    respawn="false" output="screen"  ns="$(arg namespace)">
+    <!--remap from="/joint_states" to="$(arg namespace)/joint_states"/-->
+    <remap from="/robot_description" to="$(arg namespace)/robot_description"/>
+  </node>
+
+  <group ns="$(arg namespace)">
+    <!-- Attitude control -->
+    <node name="vpc_mmc_attitude_control" pkg="morus_control" type="vpc_mmc_attitude_control.py">
+      <param name="rate" value="$(arg rate)"/>
+    </node>
+
+    <!-- Height control -->
+    <node name="vpc_mmc_height_control" pkg="morus_control" type="vpc_mmc_height_ctl.py">
+      <param name="rate" value="$(arg rate)"/>
+    </node>
+
+    <!-- Merge height and attitude control node -->
+    <node name="vpc_mmc_controller_outputs_to_motor_velocities" pkg="morus_control" type="vpc_mmc_controller_outputs_to_motor_velocities.py">
+      <param name="rate" value="$(arg rate)"/>
+    </node>
+
+  </group>
+
+</launch>

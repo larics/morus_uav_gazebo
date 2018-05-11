@@ -1,0 +1,52 @@
+# 2.083+4*0.208
+mass: 34.0
+rotor_num: 4.0
+rotor_c: 0.000456874
+Kff_v: 0.0
+Kff_a: 0.0
+tilt_angle: 0.0
+
+pid_x:
+  Kp: 0.65
+  Ki: 0.0
+  Kd: 0.03
+  limit:
+    high: 500
+    low: -500
+pid_vx:
+  Kp: 0.11
+  Ki: 0.0
+  Kd: 0.0
+  limit:
+    high: 500
+    low: -500
+
+pid_y:
+  Kp: 0.65
+  Ki: 0.0
+  Kd: 0.03
+  limit:
+    high: 500
+    low: -500
+pid_vy:
+  Kp: 0.11
+  Ki: 0.0
+  Kd: 0.0
+  limit:
+    high: 500
+    low: -500
+
+pid_z:
+  Kp: 0.5
+  Ki: 0.01
+  Kd: 0.75
+  limit:
+    high: 5
+    low: -5
+pid_vz:
+  Kp: 20.0
+  Ki: 0.1
+  Kd: 10.0
+  limit:
+    high: 350
+    low: -350
