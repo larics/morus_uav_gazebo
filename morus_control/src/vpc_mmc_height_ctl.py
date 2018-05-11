@@ -6,7 +6,7 @@ import rospy, math
 from pid import PID
 from geometry_msgs.msg import Vector3, PoseWithCovarianceStamped, PoseStamped, TwistStamped
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Float64
+from std_msgs.msg import Float64, Float32
 from dynamic_reconfigure.server import Server
 from morus_control.cfg import VpcMmcuavZCtlParamsConfig
 from morus_msgs.msg import PIDController
@@ -71,13 +71,13 @@ class HeightControl:
         self.t_old = 0
 
         rospy.Subscriber('pose', PoseStamped, self.pose_cb)
-        rospy.Subscriber('velocity', Odometry, self.vel_cb)
+        rospy.Subscriber('odometry', Odometry, self.vel_cb)
         rospy.Subscriber('vel_ref', Vector3, self.vel_ref_cb)
         rospy.Subscriber('pos_ref', Vector3, self.pos_ref_cb)
         self.pub_pid_z = rospy.Publisher('pid_z', PIDController, queue_size=1)
         self.pub_pid_vz = rospy.Publisher('pid_vz', PIDController, queue_size=1)
-        self.mot_ref_pub = rospy.Publisher('mot_vel_ref', Float64, queue_size=1)
-        self.pub_mot = rospy.Publisher('/gazebo/command/motor_speed', Actuators, queue_size=1)
+        self.mot_ref_pub = rospy.Publisher('mot_vel_ref', Float32, queue_size=1)
+        #self.pub_mot = rospy.Publisher('/gazebo/command/motor_speed', Actuators, queue_size=1)
         #self.pub_gm_mot = rospy.Publisher('collectiveThrust', GmStatus, queue_size=1)       
         self.cfg_server = Server(VpcMmcuavZCtlParamsConfig, self.cfg_callback)
         self.rate = rospy.get_param('~rate', 10)
@@ -136,7 +136,7 @@ class HeightControl:
 
             # gas motors are used to control attitude
             # publish referent motor velocity to attitude controller
-            mot_speed_msg = Float64(self.mot_speed)
+            mot_speed_msg = Float32(self.mot_speed)
             self.mot_ref_pub.publish(mot_speed_msg)
 
 

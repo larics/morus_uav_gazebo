@@ -9,7 +9,7 @@ from sensor_msgs.msg import Imu
 from geometry_msgs.msg import Vector3, PoseWithCovarianceStamped, PoseStamped, \
     TwistStamped, Pose, Point, Quaternion
 from nav_msgs.msg import Odometry
-from std_msgs.msg import Float64, Empty
+from std_msgs.msg import Float64, Empty, Float32
 from trajectory_msgs.msg import MultiDOFJointTrajectoryPoint
 from dynamic_reconfigure.server import Server
 from mmuav_control.cfg import PositionCtlParamsConfig
@@ -149,7 +149,7 @@ class PositionControl:
         self.pub_pid_vy = rospy.Publisher('pid_vy', PIDController, queue_size=1)
         self.pub_pid_z = rospy.Publisher('pid_z', PIDController, queue_size=1)
         self.pub_pid_vz = rospy.Publisher('pid_vz', PIDController, queue_size=1)
-        self.mot_ref_pub = rospy.Publisher('mot_vel_ref', Float64, queue_size=1)
+        self.mot_ref_pub = rospy.Publisher('mot_vel_ref', Float32, queue_size=1)
         self.euler_ref_pub = rospy.Publisher('euler_ref', Vector3, queue_size=1)
 
         # Set up feedback callbacks
@@ -257,7 +257,7 @@ class PositionControl:
 
             # gas motors are used to control attitude
             # publish referent motor velocity to attitude controller
-            mot_speed_msg = Float64(self.mot_speed)
+            mot_speed_msg = Float32(self.mot_speed)
             self.mot_ref_pub.publish(mot_speed_msg)
 
 

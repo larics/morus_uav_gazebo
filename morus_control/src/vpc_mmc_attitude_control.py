@@ -138,7 +138,7 @@ class AttitudeControl:
         self.t_old = 0
 
         rospy.Subscriber('imu', Imu, self.ahrs_cb)
-        rospy.Subscriber('mot_vel_ref', Float64, self.mot_vel_ref_cb)
+        #rospy.Subscriber('mot_vel_ref', Float64, self.mot_vel_ref_cb)
         rospy.Subscriber('euler_ref', Vector3, self.euler_ref_cb)
         rospy.Subscriber('/clock', Clock, self.clock_cb)
         rospy.Subscriber('reset_controllers', Empty, self.reset_controllers_cb)

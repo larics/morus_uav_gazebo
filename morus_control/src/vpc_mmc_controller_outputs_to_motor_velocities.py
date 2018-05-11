@@ -6,7 +6,7 @@ import rospy
 from pid import PID
 from geometry_msgs.msg import Vector3, Vector3Stamped, PoseWithCovarianceStamped
 from sensor_msgs.msg import Imu
-from std_msgs.msg import Float64, Float64MultiArray
+from std_msgs.msg import Float64, Float64MultiArray, Float32
 import math
 from mav_msgs.msg import Actuators
 from datetime import datetime
@@ -44,7 +44,7 @@ class MergeControllerOutputs:
         # Subscribers to height and attitude controllers
         rospy.Subscriber('attitude_command', Float64MultiArray, 
             self.attitude_command_cb, queue_size=1)
-        rospy.Subscriber('mot_vel_ref', Float64, 
+        rospy.Subscriber('mot_vel_ref', Float32, 
             self.motor_velocity_ref_cb, queue_size=1)
 
     def run(self):
