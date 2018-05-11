@@ -17,6 +17,7 @@ class MergeControllerOutputs:
     def __init__(self):
         self.rate = rospy.get_param('~rate', 100)
         self.ros_rate = rospy.Rate(self.rate)
+        self.quantization_step = rospy.get_param('~quantization_step', 1.78)
 
         self.roll_command = 0.0
         self.pitch_command = 0.0
@@ -65,6 +66,10 @@ class MergeControllerOutputs:
             mot2 = self.mot_vel_ref - self.yaw_command + self.vpc_roll_command
             mot3 = self.mot_vel_ref + self.yaw_command + self.vpc_pitch_command
             mot4 = self.mot_vel_ref - self.yaw_command - self.vpc_roll_command
+            mot1 = self.quantization(mot1, self.quantization_step)
+            mot2 = self.quantization(mot2, self.quantization_step)
+            mot3 = self.quantization(mot3, self.quantization_step)
+            mot4 = self.quantization(mot4, self.quantization_step)
 
             moving_mass_front = self.pitch_command # mm1
             moving_mass_back = -self.pitch_command # mm3
@@ -100,6 +105,9 @@ class MergeControllerOutputs:
     def motor_velocity_ref_cb(self, msg):
         self.mot_vel_ref = msg.data
         self.mot_vel_ref_received_flag = True
+
+    def quantization(self, value, step):
+        return round(value/step)*step
 
 
 if __name__ == "__main__":
