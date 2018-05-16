@@ -50,7 +50,7 @@ class AngleTiltCtl:
         self.pub_roll_tilt0 = rospy.Publisher('/morus/angle_tilt_0_controller/command', Float64, queue_size=1)
         self.pub_roll_tilt1 = rospy.Publisher('/morus/angle_tilt_2_controller/command', Float64, queue_size=1)
         self.pub_pitch_tilt0 = rospy.Publisher('/morus/angle_tilt_1_controller/command', Float64, queue_size=1)
-        self.pub_pitch_tilt1 = rospy.Publisher('/morus_angle_tilti_3_controller/command', Float64, queue_size=1)
+        self.pub_pitch_tilt1 = rospy.Publisher('/morus/angle_tilt_3_controller/command', Float64, queue_size=1)
 
         # Publishing PIDs in order to use dynamic reconfigure
         self.pub_PID_z = rospy.Publisher('PID_z', PIDController, queue_size=1)
@@ -82,14 +82,14 @@ class AngleTiltCtl:
         self.roll_sp_filt, self.pitch_sp_filt, self.yaw_sp_filt = 0, 0, 0
         self.dwz = 0
 
-        self.lim_tilt = 0.25
+        self.lim_tilt = 0.2
 
         ########################################
         # Position control PIDs -> connect directly to rotors tilt
-        self.pid_x = PID(20, 1, 10, self.lim_tilt, -self.lim_tilt)
-        self.pid_vx = PID(35, 0.01, 15, 150, -150)
+        self.pid_x = PID(15, 1, 20, self.lim_tilt, -self.lim_tilt)
+        self.pid_vx = PID(30, 0.01, 50, 200, -200)
         self.pid_y = PID(15, 1, 20, self.lim_tilt, -self.lim_tilt)
-        self.pid_vy = PID(30, 0.01, 50, 150, -150)
+        self.pid_vy = PID(30, 0.01, 50, 200, -200)
 
         # Define PID for height control
         self.z_ref_filt = 0
@@ -111,7 +111,7 @@ class AngleTiltCtl:
 
         # initialize yaw rate PID controller
         self.yaw_rate_PID = PID(15, 0.1, 25, 5, -5)
-        self.yaw_PID = PID(95, 0.5, 65, +250, -250)
+        self.yaw_PID = PID(95, 0.5, 65, +150, -150)
 
     def pose_cb(self, msg):
         """
@@ -263,10 +263,10 @@ class AngleTiltCtl:
             vel_mv_x_corr = self.vel_mv.x * np.cos(self.yaw) - self.vel_mv.y * np.sin(self.yaw)
             vel_mv_y_corr = self.vel_mv.x * np.sin(self.yaw) + self.vel_mv.y * np.cos(self.yaw)
 
-            pose_sp_x = prefilter(self.pose_mv.x, 0.1, self.pose_sp.x)
+            pose_sp_x = prefilter(self.pose_mv.x, 0.3, self.pose_sp.x)
             vel_sp_x = self.pid_vx.compute(pose_sp_x, self.pose_mv.x, dt)
 
-            pose_sp_y = prefilter(self.pose_mv.y, 0.1, self.pose_sp.y)
+            pose_sp_y = prefilter(self.pose_mv.y, 0.3, self.pose_sp.y)
             vel_sp_y = self.pid_vy.compute(pose_sp_y, self.pose_mv.y, dt)
 
             tilt_x = self.pid_x.compute(vel_sp_x, vel_mv_x_corr, dt)
@@ -285,11 +285,15 @@ class AngleTiltCtl:
                                                                         self.pose_mv.y, self.pose_sp.y,
                                                                         self.pose_mv.z,  self.pose_sp.z))
 
+            #self.hover_speed = 0
             motor_speed_1 = self.hover_speed + domega_z + dwz - dwy
             motor_speed_2 = self.hover_speed + domega_z - dwz + dwx
             motor_speed_3 = self.hover_speed + domega_z + dwz + dwy
             motor_speed_4 = self.hover_speed + domega_z - dwz - dwx
-            print(motor_speed_1, motor_speed_2, motor_speed_3, motor_speed_4)
+            print("rotor_front:{}\nrotor_left:{}\nrotor_back:{}\nrotor_right:{}\n".format(motor_speed_1,
+                                                                                          motor_speed_2,
+                                                                                          motor_speed_3,
+                                                                                          motor_speed_4))
             #print(self.z_sp, self.z_mv)
 
             #if abs(self.euler_sp.x - self.euler_mv.x) < 10e-4:
@@ -303,26 +307,18 @@ class AngleTiltCtl:
             print("Yaw output: {}\n".format(dwz))
             #print("Roll control activated: {}".format(tilt_tf_y))
             #print("Pitch control activated: {}".format(tilt_tf_x))
-            if (abs(self.pose_sp.x - self.pose_mv.x) + abs(self.pose_sp.y - self.pose_mv.y)) < 0.5:
-                self.lim_tilt = 0.15
-            else:
-                self.lim_tilt = 0.25
+            pose_error_quad = (abs(self.pose_sp.x - self.pose_mv.x) + abs(self.pose_sp.y - self.pose_mv.y))**2
+            print("Quadratic pose error is:{}\n".format(pose_error_quad))
+            if pose_error_quad < 0.5:
+                if abs(tilt_tf_x) > 0.1:
+                    tilt_tf_x = np.sign(tilt_tf_x) * 0.05
+                if abs(tilt_tf_y) > 0.1:
+                    tilt_tf_y = np.sign(tilt_tf_y) * 0.05
 
             self.pub_roll_tilt0.publish(-tilt_tf_y)
             self.pub_roll_tilt1.publish(+tilt_tf_y)
             self.pub_pitch_tilt0.publish(tilt_tf_x)
-            self.pub_pitch_tilt1.publish(tilt_tf_x)
-
-            #if abs(pitch_rate_ref - self.euler_rate_mv.y) < 10e-3:
-            #   dwy = 0
-            #else:
-            #    print("Pitch tilt controll activated: {}\n".format(dwy),
-            #          "Pitch rate value is: {}".format(self.euler_rate_mv.y),
-            #          "Pitch rate ref is: {}".format(pitch_rate_ref))
-                #self.pub_pitch_tilt0.publish(-dwy)
-                #self.pub_pitch_tilt1.publish(dwy)
-
-            # publish motor speeds
+            self.pub_pitch_tilt1.publish(-tilt_tf_x)
             motor_speed_msg = Actuators()
             motor_speed_msg.angular_velocities = [motor_speed_1, motor_speed_2,
                                                   motor_speed_3, motor_speed_4]
