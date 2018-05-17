@@ -62,3 +62,14 @@ git clone https://github.com/larics/morus_uav_ros_msgs.git
 git clone https://github.com/larics/morus_uav_gazebo.git
 catkin build
 ```
+
+# Running Simulation
+You can run the simulation with detailed morus uav model by running following command:
+```
+roslaunch morus_gazebo morus_vpcmmc_attitude_height_control.launch
+```
+
+If the simulation slows down your computer, you can run the simulation with alternative mesh file (simple box):
+```
+roslaunch morus_gazebo morus_vpcmmc_attitude_height_control.launch uav_mesh_file:=box.dae
+```
