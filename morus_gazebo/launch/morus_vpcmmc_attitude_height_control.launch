@@ -14,6 +14,7 @@
   <arg name="log_file" default="morus"/>
 
   <arg name="joy_config" default="attack3"/>
+  <arg name="uav_mesh_file" default="morus_uav_final.dae"/>
 
 
   <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
@@ -26,7 +27,9 @@
     <arg name="headless" value="$(arg headless)"/>
   </include>
 
-  <include file="$(find morus_gazebo)/launch/spawn_morus_multirotor.launch" />
+  <include file="$(find morus_gazebo)/launch/spawn_morus_multirotor.launch">
+    <arg name="uav_mesh_file" value="$(arg uav_mesh_file)" />
+  </include>
   
   <!-- start control stack -->
   <include file="$(find morus_control)/launch/vpc_mmcuav_attitude_height_control.launch"/>

@@ -11,6 +11,7 @@
   <arg name="log_file" default="morus_log"/>
   <arg name="exclude_floor_link_from_collision_check" default="ground_plane::link"/>
   <arg name="model" value="$(find morus_description)/urdf/morus.gazebo.xacro" />
+  <arg name="uav_mesh_file" default="morus_uav_final.dae"/>
 
   <!-- send the robot XML to param server -->
   <param name="/$(arg name)/robot_description" command="
@@ -19,7 +20,8 @@
     enable_ground_truth:=$(arg enable_ground_truth)
     exclude_floor_link_from_collision_check:=$(arg exclude_floor_link_from_collision_check)
     log_file:=$(arg log_file)
-    name:=$(arg name)"
+    name:=$(arg name)
+    custom_mesh_file:=$(arg uav_mesh_file)"
   />
     
   <param name="tf_prefix" type="string" value="$(arg tf_prefix)" />

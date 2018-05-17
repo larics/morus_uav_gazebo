@@ -3,7 +3,8 @@
 <robot name="morus" xmlns:xacro="http://ros.org/wiki/xacro">
   <!-- Properties -->
   <xacro:property name="rotor_velocity_slowdown_sim" value="10" />
-  <xacro:property name="mesh_file" value="morus_uav_final.dae" />
+  <xacro:arg name="custom_mesh_file" default="morus_uav_final.dae" />
+  <xacro:property name="mesh_file" value="$(arg custom_mesh_file)" />
   <xacro:property name="mesh_file_mass" value="MORUS_mass.dae" />
   <xacro:property name="mass" value="30" />  <!-- [kg] -->
 
