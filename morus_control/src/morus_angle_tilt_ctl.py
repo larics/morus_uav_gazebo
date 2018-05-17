@@ -77,25 +77,27 @@ class AngleTiltCtl:
         self.euler_sp = Vector3(0., 0., 0.)     # euler angles referent values
         self.pose_sp = Vector3(0., 0., 0.0)
         self.pose_mv = Vector3(0., 0., 0.)
+        self.pose_mv_tf = Vector3(0., 0., 0.)
         self.vel_mv = Vector3(0., 0., 0.)
         self.euler_rate_mv = Vector3(0, 0, 0)   # measured angular velocities
         self.roll_sp_filt, self.pitch_sp_filt, self.yaw_sp_filt = 0, 0, 0
         self.dwz = 0
 
         self.lim_tilt = 0.2
+        c = 1000
 
         ########################################
         # Position control PIDs -> connect directly to rotors tilt
-        self.pid_x = PID(15, 1, 20, self.lim_tilt, -self.lim_tilt)
-        self.pid_vx = PID(30, 0.01, 50, 200, -200)
-        self.pid_y = PID(15, 1, 20, self.lim_tilt, -self.lim_tilt)
-        self.pid_vy = PID(30, 0.01, 50, 200, -200)
+        self.pid_x = PID(15./c, 1./c, 20./c, self.lim_tilt, -self.lim_tilt)
+        self.pid_vx = PID(30, 0.01, 50, 300, -300)
+        self.pid_y = PID(15./c, 1./c, 20./c, self.lim_tilt, -self.lim_tilt)
+        self.pid_vy = PID(30, 0.01, 50, 300, -300)
 
         # Define PID for height control
         self.z_ref_filt = 0
         self.z_mv = 0
 
-        self.pid_z = PID(4.1, 0.01, 1.5, 4, -4)
+        self.pid_z = PID(3, 0.01, 1.5, 4, -4)
         self.pid_vz = PID(85, 0.1, 15, 200, -200)
 
         ########################################
@@ -126,6 +128,9 @@ class AngleTiltCtl:
         self.pose_mv.x = msg.pose.position.x
         self.pose_mv.y = msg.pose.position.y
         self.pose_mv.z = msg.pose.position.z
+
+        self.pose_mv_tf.x = msg.pose.position.x * np.cos(self.euler_sp.z) + msg.pose.position.y * np.sin(self.euler_sp.z)
+        self.pose_mv_tf.y = - msg.pose.position.x * np.sin(self.euler_sp.z) + msg.pose.position.y * np.cos(self.euler_sp.z)
 
         self.qx = msg.pose.orientation.x
         self.qy = msg.pose.orientation.y
@@ -247,7 +252,7 @@ class AngleTiltCtl:
             dwy = self.pitch_PID.compute(pitch_rate_ref, self.euler_rate_mv.y, dt)
 
             # yaw cascade (first PID -> yaw ref, second PID -> yaw_rate ref)
-            a = 0.4
+            a = 0.8
             self.yaw_sp_filt = (1 - a) * self.euler_sp.z + a * self.yaw_sp_filt
             yaw_rate_ref = self.yaw_rate_PID.compute(self.yaw_sp_filt, self.euler_mv.z, dt)
             dwz = self.yaw_PID.compute(yaw_rate_ref, self.euler_rate_mv.z, dt)
@@ -263,17 +268,23 @@ class AngleTiltCtl:
             vel_mv_x_corr = self.vel_mv.x * np.cos(self.yaw) - self.vel_mv.y * np.sin(self.yaw)
             vel_mv_y_corr = self.vel_mv.x * np.sin(self.yaw) + self.vel_mv.y * np.cos(self.yaw)
 
-            pose_sp_x = prefilter(self.pose_mv.x, 0.3, self.pose_sp.x)
-            vel_sp_x = self.pid_vx.compute(pose_sp_x, self.pose_mv.x, dt)
+            pose_sp_x = prefilter(self.pose_mv.x, 0.5, self.pose_sp.x)
+            pose_sp_y = prefilter(self.pose_mv.y, 0.5, self.pose_sp.y)
 
-            pose_sp_y = prefilter(self.pose_mv.y, 0.3, self.pose_sp.y)
-            vel_sp_y = self.pid_vy.compute(pose_sp_y, self.pose_mv.y, dt)
+            pose_sp_tf_x = np.cos(self.euler_sp.z) * pose_sp_x + np.sin(self.euler_sp.z) * pose_sp_y
+            pose_sp_tf_y = - np.sin(self.euler_sp.z) * pose_sp_x + np.cos(self.euler_sp.z) * pose_sp_y
+
+            vel_sp_x = self.pid_vx.compute(pose_sp_tf_x, self.pose_mv_tf.x, dt)
+            vel_sp_y = self.pid_vy.compute(pose_sp_tf_y, self.pose_mv_tf.y, dt)
 
             tilt_x = self.pid_x.compute(vel_sp_x, vel_mv_x_corr, dt)
             tilt_y = self.pid_y.compute(vel_sp_y, vel_mv_y_corr, dt)
 
-            tilt_tf_x = np.cos(self.yaw) * tilt_x - np.sin(self.yaw) * tilt_y
-            tilt_tf_y = np.sin(self.yaw) * tilt_y + np.cos(self.yaw) * tilt_y
+            tilt_tf_x = tilt_x
+            tilt_tf_y = tilt_y
+
+            #tilt_tf_x = np.cos(self.yaw) * tilt_x - np.sin(self.yaw) * tilt_y
+            #tilt_tf_y = np.sin(self.yaw) * tilt_y + np.cos(self.yaw) * tilt_y
 
             if VERBOSE:
 
@@ -294,26 +305,27 @@ class AngleTiltCtl:
                                                                                           motor_speed_2,
                                                                                           motor_speed_3,
                                                                                           motor_speed_4))
-            #print(self.z_sp, self.z_mv)
-
-            #if abs(self.euler_sp.x - self.euler_mv.x) < 10e-4:
-            #    dwx = 0
-            #else:
-            #print("euler_sp.x:{}\neuler_mv.x:{}\n".format(self.euler_sp.x, self.euler_mv.x))
-            print("pose_sp.y:{}\npose_mv.y:{}\n".format(self.pose_sp.y, self.pose_mv.y))
-            print("pose_sp.x:{}\npose_mv.x:{}\n".format(self.pose_sp.x, self.pose_mv.x))
-            print("vel_mv.x:{}\nvel_mv.y:{}\n".format(self.vel_mv.x, self.vel_mv.y))
-            print("yaw value: {}\n".format(self.euler_mv.z))
-            print("Yaw output: {}\n".format(dwz))
-            #print("Roll control activated: {}".format(tilt_tf_y))
-            #print("Pitch control activated: {}".format(tilt_tf_x))
-            pose_error_quad = (abs(self.pose_sp.x - self.pose_mv.x) + abs(self.pose_sp.y - self.pose_mv.y))**2
-            print("Quadratic pose error is:{}\n".format(pose_error_quad))
+            pose_error_quad = (abs(self.pose_sp.x - self.pose_mv.x) + abs(self.pose_sp.y - self.pose_mv.y)) ** 2
             if pose_error_quad < 0.5:
                 if abs(tilt_tf_x) > 0.1:
                     tilt_tf_x = np.sign(tilt_tf_x) * 0.05
                 if abs(tilt_tf_y) > 0.1:
                     tilt_tf_y = np.sign(tilt_tf_y) * 0.05
+            print("tilt_x output:{}\ntilt_y output:{}\n".format(tilt_tf_x, tilt_tf_y))
+            print("=========GLOBAL==========\n")
+            print("pose_sp.x:{}\npose_mv.x:{}\n").format(self.pose_sp.x, self.pose_mv.x)
+            print("pose_sp.y:{}\npose_mv.y:{}\n").format(self.pose_sp.y, self.pose_mv.y)
+            print("=========LOCAL=========\n")
+            print("pose_sp.y:{}\npose_mv.y:{}\n".format(pose_sp_tf_y, self.pose_mv_tf.y))
+            print("pose_sp.x:{}\npose_mv.x:{}\n".format(pose_sp_tf_x, self.pose_mv_tf.x))
+            print("vel_mv.x:{}\nvel_mv.y:{}\n".format(self.vel_mv.x, self.vel_mv.y))
+            print("yaw value: {}\n".format(self.euler_mv.z))
+            print("Yaw output: {}\n".format(dwz))
+            #print("Roll control activated: {}".format(tilt_tf_y))
+            #print("Pitch control activated: {}".format(tilt_tf_x))
+
+            print("Quadratic pose error is:{}\n".format(pose_error_quad))
+
 
             self.pub_roll_tilt0.publish(-tilt_tf_y)
             self.pub_roll_tilt1.publish(+tilt_tf_y)
