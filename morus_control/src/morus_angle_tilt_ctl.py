@@ -59,6 +59,7 @@ class AngleTiltCtl:
         self.pub_tilt_x_ref = rospy.Publisher("/morus/tilt_x_ref_", Float64, queue_size=1)
         self.pub_tilt_y_ref = rospy.Publisher("/morus/tilt_y_ref_", Float64, queue_size=1)
         self.pub_vel_ref = rospy.Publisher("/morus/pub_lin_vel_ref", Vector3, queue_size=1)
+        self.pub_pose_ref = rospy.Publisher("/morus/pub_pose_ref", Vector3, queue_size=1)
 
         # Publishing PIDs in order to use dynamic reconfigure
         self.pub_PID_z = rospy.Publisher('PID_z', PIDController, queue_size=1)
@@ -99,10 +100,10 @@ class AngleTiltCtl:
 
         ########################################
         # Position control PIDs -> connect directly to rotors tilt
-        self.pid_x = PID(1., 0, 0., self.lim_tilt, -self.lim_tilt)
-        self.pid_vx = PID(1, 0.01, 0.1, 300, -300)
-        self.pid_y = PID(1., 0, 0.0, self.lim_tilt, -self.lim_tilt)
-        self.pid_vy = PID(1, 0.01, 0.1, 300, -300)
+        self.pid_x = PID(1.25, 0, 0., self.lim_tilt, -self.lim_tilt)
+        self.pid_vx = PID(1.85, 0, 1, 500, -500)
+        self.pid_y = PID(1.25, 0, 0., self.lim_tilt, -self.lim_tilt)
+        self.pid_vy = PID(1.85, 0, 1, 500, -500)
 
         # Define PID for height control
         self.z_ref_filt = 0
@@ -147,9 +148,6 @@ class AngleTiltCtl:
         self.pose_mv.x = msg.pose.position.x
         self.pose_mv.y = msg.pose.position.y
         self.pose_mv.z = msg.pose.position.z
-
-        self.pose_mv_tf.x = msg.pose.position.x * np.cos(self.euler_sp.z) + msg.pose.position.y * np.sin(self.euler_sp.z)
-        self.pose_mv_tf.y = - msg.pose.position.x * np.sin(self.euler_sp.z) + msg.pose.position.y * np.cos(self.euler_sp.z)
 
         self.qx = msg.pose.orientation.x
         self.qy = msg.pose.orientation.y
@@ -306,26 +304,26 @@ class AngleTiltCtl:
             pose_sp_x = prefilter(self.pose_mv.x, 0.5, self.pose_sp.x)
             pose_sp_y = prefilter(self.pose_mv.y, 0.5, self.pose_sp.y)
 
-            pose_sp_tf_x = np.cos(self.euler_sp.z) * pose_sp_x + np.sin(self.euler_sp.z) * pose_sp_y
-            pose_sp_tf_y = - np.sin(self.euler_sp.z) * pose_sp_x + np.cos(self.euler_sp.z) * pose_sp_y
-
-            vel_sp_x = self.pid_vx.compute(pose_sp_tf_x, self.pose_mv_tf.x, dt)
-            vel_sp_y = self.pid_vy.compute(pose_sp_tf_y, self.pose_mv_tf.y, dt)
+            vel_sp_x = self.pid_vx.compute(pose_sp_x, self.pose_mv.x, dt)
+            vel_sp_y = self.pid_vy.compute(pose_sp_y, self.pose_mv.y, dt)
 
             # --> added vel_ref to configure inner control loop
-            tilt_x = self.pid_x.compute(self.vel_ref.x, self.vel_mv.x, dt)
-            tilt_y = self.pid_y.compute(self.vel_ref.y, self.vel_mv.y, dt)
+            tilt_x = self.pid_x.compute(vel_sp_x, self.vel_mv.x, dt)
+            tilt_y = self.pid_y.compute(vel_sp_y, self.vel_mv.y, dt)
 
-            tilt_tf_x = tilt_x
-            tilt_tf_y = tilt_y
+            #tilt_tf_x = tilt_x
+            #tilt_tf_y = tilt_y
 
             # small addition in order to be still while on ground
             if self.pose_mv.z < 1.0:
                 tilt_tf_x = 0
                 tilt_tf_y = 0
-            # NE ODKOMENTIRAVAT
-            #tilt_tf_x = np.cos(self.yaw) * tilt_x - np.sin(self.yaw) * tilt_y
-            #tilt_tf_y = np.sin(self.yaw) * tilt_y + np.cos(self.yaw) * tilt_y
+            if abs(self.euler_sp.z - self.euler_mv.z)> 0.1:
+                tilt_tf_x = np.cos(self.euler_mv.z) * tilt_x + np.sin(self.euler_mv.z) * tilt_y
+                tilt_tf_y = - np.sin(self.euler_mv.z) * tilt_x + np.cos(self.euler_mv.z) * tilt_y
+            else:
+                tilt_tf_x = np.cos(self.euler_sp.z) * tilt_x + np.sin(self.euler_sp.z) * tilt_y
+                tilt_tf_y = -np.sin(self.euler_sp.z) * tilt_x + np.cos(self.euler_sp.z) * tilt_y
 
             if VERBOSE:
 
@@ -345,28 +343,18 @@ class AngleTiltCtl:
                                                                                           motor_speed_2,
                                                                                           motor_speed_3,
                                                                                           motor_speed_4))
-            pose_error_quad = (abs(self.pose_sp.x - self.pose_mv.x) + abs(self.pose_sp.y - self.pose_mv.y)) ** 2
-            #if pose_error_quad < 0.5:
-            #    if abs(tilt_tf_x) > 0.1:
-            #        tilt_tf_x = np.sign(tilt_tf_x) * 0.02
-            #    if abs(tilt_tf_y) > 0.1:
-            #        tilt_tf_y = np.sign(tilt_tf_y) * 0.02
 
             print("tilt_x output:{}\ntilt_y output:{}\n".format(tilt_tf_x, tilt_tf_y))
             print("=========GLOBAL==========\n")
             print("pose_sp.x:{}\npose_mv.x:{}\n").format(self.pose_sp.x, self.pose_mv.x)
             print("pose_sp.y:{}\npose_mv.y:{}\n").format(self.pose_sp.y, self.pose_mv.y)
-            print("=========LOCAL=========\n")
-            print("pose_sp.y:{}\npose_mv.y:{}\n".format(pose_sp_tf_y, self.pose_mv_tf.y))
-            print("pose_sp.x:{}\npose_mv.x:{}\n".format(pose_sp_tf_x, self.pose_mv_tf.x))
             print("vel_mv.x:{}\nvel_mv.y:{}\n".format(self.vel_mv.x, self.vel_mv.y))
             print("yaw value: {}\n".format(self.euler_mv.z))
             print("Yaw output: {}\n".format(dwz))
             print("Roll control activated: {}".format(tilt_tf_y))
             print("Pitch control activated: {}".format(tilt_tf_x))
-            print("Quadratic pose error is:{}\n".format(pose_error_quad))
-            print("vel_ref_x:{}\nvel_ref_y:{}\ntilt_x_out:{}\ntilt_y_out:{}\n".format(
-                  self.vel_ref.x, self.vel_ref.y, tilt_x, tilt_y))
+            #print("vel_ref_x:{}\nvel_ref_y:{}\ntilt_x_out:{}\ntilt_y_out:{}\n".format(
+            #      self.vel_ref.x, self.vel_ref.y, tilt_x, tilt_y))
 
             # CONTROL TILT
             self.pub_roll_tilt0.publish(-tilt_tf_y)
@@ -404,7 +392,8 @@ class AngleTiltCtl:
             # publish_angles
             self.pub_angles.publish(self.euler_mv)
             self.pub_angles_sp.publish(self.euler_sp)
-            self.pub_vel_ref.publish(self.vel_ref)
+            self.pub_vel_ref.publish(Vector3(vel_sp_x, vel_sp_y, vz_ref))
+            self.pub_pose_ref.publish(self.pose_sp)
 
             self.pub_mot.publish(motor_speed_msg)
 
