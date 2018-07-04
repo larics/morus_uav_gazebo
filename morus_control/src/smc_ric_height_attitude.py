@@ -10,6 +10,8 @@ from std_msgs.msg import Float64
 from pid_smc import PID
 from trajectory_msgs.msg import MultiDOFJointTrajectory
 from first_order_filter import FirstOrderFilter
+from morus_msgs.msg import SMCStatus
+from std_msgs.msg import Header
 
 class MorusController:
 
@@ -44,15 +46,22 @@ class MorusController:
 
         # Mass command publishers
         self.pub_mass0 = rospy.Publisher(
-            'morus/movable_mass_0_position_controller/command', Float64, queue_size=1)
+            'movable_mass_0_position_controller/command', Float64, queue_size=1)
         self.pub_mass1 = rospy.Publisher(
-            'morus/movable_mass_1_position_controller/command', Float64, queue_size=1)
+            'movable_mass_1_position_controller/command', Float64, queue_size=1)
         self.pub_mass2 = rospy.Publisher(
-            'morus/movable_mass_2_position_controller/command', Float64, queue_size=1)
+            'movable_mass_2_position_controller/command', Float64, queue_size=1)
         self.pub_mass3 = rospy.Publisher(
-            'morus/movable_mass_3_position_controller/command', Float64, queue_size=1)
+            'movable_mass_3_position_controller/command', Float64, queue_size=1)
 
-        self.pose_sp = Vector3(0., 0., 0.)
+        # Status message publisher
+        self.status_pub = rospy.Publisher(
+            'smc_status',
+            SMCStatus,
+            queue_size=1)
+        self.status_msg = SMCStatus()
+
+        self.pose_sp = Vector3(0., 0., 0.62)
         self.vel_sp = Vector3(0., 0., 0.)
         self.euler_sp = Vector3(0., 0., 0.)
         self.euler_mv = Vector3(0., 0., 0.)
@@ -68,8 +77,8 @@ class MorusController:
 
         # Height controller
         # TODO: Implement real derivative in PID
-        self.pid_z = PID(1.5, 0.0, 0.1) # PID(4, 0, 1)
-        self.pid_vz = PID(40, 0.1, 0)   # 75, 20, 10)
+        self.pid_z = PID(4, 0, 1)
+        self.pid_vz = PID(40, 0.1, 0)
 
         # Z error compensator
         self.z_compensator = FirstOrderFilter(0.3, -0.299, 1)
@@ -209,10 +218,17 @@ class MorusController:
                 ]
             self.motor_pub.publish(self.motor_vel_msg)
 
-            print("Z_error: {}".format(z_error))
-            print("VZ_error: {}".format(vz_error))
-            print("z_sp: {}".format(self.pose_sp.z))
-            print("vz_sp: {}\n".format(self.vel_sp.z))
+            # Update status message
+            head = Header()
+            head.stamp = rospy.Time.now()
+            self.status_msg.header = head
+            self.status_msg.z_mv = self.z_mv
+            self.status_msg.z_sp = self.pose_sp.z
+            self.status_msg.vz_sp = self.vel_sp.z
+            self.status_msg.vz_mv = self.vz_mv
+
+            # Publish status message
+            self.status_pub.publish(self.status_msg)
 
     def calculate_height_velocity_ref(self, dt, z_error):
 
@@ -229,12 +245,18 @@ class MorusController:
         # Calculate feed-forward term from z position reference
         z_ref_ff_term = self.z_feed_forward_gain * self.z_feed_forward_filter.compute(self.pose_sp.z)
 
+        # Update status message
+        self.status_msg.z_comp = self.z_compensator_gain * z_error_compensator_term
+        self.status_msg.z_switch = z_pos_switch_output
+        self.status_msg.z_ff = z_ref_ff_term
+        self.status_msg.z_pid = z_pid_output
+
         # Calculate z velocity reference
         vel_ref = \
-            z_pid_output #+ \
-            #self.z_compensator_gain * z_error_compensator_term + \
-            #z_pos_switch_output + \
-            #z_ref_ff_term
+            z_pid_output + \
+            self.z_compensator_gain * z_error_compensator_term + \
+            z_pos_switch_output + \
+            z_ref_ff_term
 
         return vel_ref
 
@@ -252,12 +274,18 @@ class MorusController:
         # Calculate velocity switch function output
         vz_switch_output = self.vz_beta * math.tanh(vz_error_compensator_term / self.eps)
 
+        # Update status message
+        self.status_msg.vz_comp = self.vz_compensator_gain * vz_error_compensator_term
+        self.status_msg.vz_switch = vz_switch_output
+        self.status_msg.vz_ff = vz_ref_ff_term
+        self.status_msg.vz_pid = vz_pid_output
+
         # Calculate rotor velocity
         rotor_velocity = \
-            vz_pid_output #+ \
-            #vz_ref_ff_term + \
-            #self.vz_compensator_gain * vz_error_compensator_term + \
-            #vz_switch_output
+            vz_pid_output + \
+            vz_ref_ff_term + \
+            self.vz_compensator_gain * vz_error_compensator_term + \
+            vz_switch_output
 
         return rotor_velocity
 

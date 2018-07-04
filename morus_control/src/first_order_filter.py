@@ -10,7 +10,7 @@ class FirstOrderFilter:
 
     def compute(self, u_k):
 
-        y_k = self.b0 * u_k - self.b1 * self.u_old + self.a1 * self.y_old
+        y_k = self.b0 * u_k + self.b1 * self.u_old + self.a1 * self.y_old
         self.y_old = y_k
         self.u_old = u_k
 
