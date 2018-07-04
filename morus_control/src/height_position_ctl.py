@@ -27,7 +27,7 @@ class HeightControl:
         pid_z        - publishes PID-z data - referent value, measured value, P, I, D and total component (useful for tuning params)
         pid_vz        - publishes PID-vz data - referent value, measured value, P, I, D and total component (useful for tuning params)
 
-    Dynamic reconfigure is used to set controller params online.
+    Dynamic gure is used to set controller params online.
     '''
 
     def __init__(self):

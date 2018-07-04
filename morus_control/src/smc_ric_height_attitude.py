@@ -12,6 +12,8 @@ from trajectory_msgs.msg import MultiDOFJointTrajectory
 from first_order_filter import FirstOrderFilter
 from morus_msgs.msg import SMCStatus
 from std_msgs.msg import Header
+from dynamic_reconfigure.server import Server
+from morus_control.cfg import SmcMmcuavPositionCtlParamsConfig
 
 class MorusController:
 
@@ -91,7 +93,7 @@ class MorusController:
         # Define switch function constants
         self.eps = 0.01
         self.z_pos_beta = 0.01
-        self.vz_beta = 180
+        self.vz_beta = 30 # 180
 
         # Define feed forward z position reference filter
         self.z_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
@@ -109,6 +111,67 @@ class MorusController:
         self.rotor_vel_max = 400
         self.hover_speed = 432.4305
 
+        self.config_start = False
+        self.cfg_server = Server(SmcMmcuavPositionCtlParamsConfig, self.cfg_callback)
+
+    def cfg_callback(self, config, level):
+
+        if not self.config_start:
+            self.config_start = True
+
+            config.z_kp = self.pid_z.get_kp()
+            config.z_ki = self.pid_z.get_ki()
+            config.z_kd = self.pid_z.get_kd()
+
+            config.vz_kp = self.pid_vz.get_kp()
+            config.vz_ki = self.pid_vz.get_ki()
+            config.vz_kd = self.pid_vz.get_kd()
+
+            config.z_comp_b0 = self.z_compensator.getB0()
+            config.z_comp_b1 = self.z_compensator.getB1()
+            config.z_comp_a1 = self.z_compensator.getA1()
+            config.z_comp_gain = self.z_compensator_gain
+
+            config.vz_comp_b0 = self.vz_compensator.getB0()
+            config.vz_comp_b1 = self.vz_compensator.getB1()
+            config.vz_comp_a1 = self.vz_compensator.getA1()
+            config.vz_comp_gain = self.vz_compensator_gain
+
+            config.switch_eps = self.eps
+            config.z_beta = self.z_pos_beta
+            config.vz_beta = self.vz_beta
+
+            config.z_ff = self.z_feed_forward_gain
+            config.vz_ff = self.vz_feed_forward_gain
+
+        else:
+            self.pid_z.set_kp(config.z_kp)
+            self.pid_z.set_ki(config.z_ki)
+            self.pid_z.set_kd(config.z_kd)
+
+            self.pid_vz.set_kp(config.vz_kp)
+            self.pid_vz.set_ki(config.vz_ki)
+            self.pid_vz.set_kd(config.vz_kd)
+
+            self.z_compensator_gain = config.z_comp_gain
+            self.z_compensator.setB0(config.z_comp_b0)
+            self.z_compensator.setB1(config.z_comp_b1)
+            self.z_compensator.setA1(config.z_comp_a1)
+
+            self.vz_compensator_gain = config.vz_comp_gain
+            self.vz_compensator.setB0(config.vz_comp_b0)
+            self.vz_compensator.setB1(config.vz_comp_b1)
+            self.vz_compensator.setA1(config.vz_comp_a1)
+
+            self.eps = config.switch_eps
+            self.z_pos_beta = config.z_beta
+            self.vz_beta = config.vz_beta
+
+            self.z_feed_forward_gain = config.z_ff
+            self.vz_feed_forward_gain = config.vz_ff
+
+        return config
+    
     def setpoint_cb(self, data):
 
         self.pose_sp.x = data.x
@@ -226,6 +289,7 @@ class MorusController:
             self.status_msg.z_sp = self.pose_sp.z
             self.status_msg.vz_sp = self.vel_sp.z
             self.status_msg.vz_mv = self.vz_mv
+            self.status_msg.rotor_vel = self.hover_speed + rotor_velocity
 
             # Publish status message
             self.status_pub.publish(self.status_msg)
@@ -254,9 +318,9 @@ class MorusController:
         # Calculate z velocity reference
         vel_ref = \
             z_pid_output + \
-            self.z_compensator_gain * z_error_compensator_term + \
-            z_pos_switch_output + \
-            z_ref_ff_term
+            z_pos_switch_output #+ \
+            #self.z_compensator_gain * z_error_compensator_term + \
+            #z_ref_ff_term
 
         return vel_ref
 
@@ -283,9 +347,9 @@ class MorusController:
         # Calculate rotor velocity
         rotor_velocity = \
             vz_pid_output + \
-            vz_ref_ff_term + \
-            self.vz_compensator_gain * vz_error_compensator_term + \
-            vz_switch_output
+            vz_switch_output #+ \
+            # self.vz_compensator_gain * vz_error_compensator_term + \
+            # vz_ref_ff_term
 
         return rotor_velocity
 

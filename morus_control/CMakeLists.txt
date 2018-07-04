@@ -18,6 +18,7 @@ generate_dynamic_reconfigure_options(
     config/VpcMmcuavPositionCtlParams.cfg
     config/VpcMmcuavAttitudeCtlParams.cfg
     config/PositionCtlParams.cfg
+    config/SmcMmcuavPositionCtlParams.cfg
     )
 
 catkin_package(

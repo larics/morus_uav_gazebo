@@ -15,3 +15,21 @@ class FirstOrderFilter:
         self.u_old = u_k
 
         return y_k
+
+    def getB0(self):
+        return self.b0
+
+    def getB1(self):
+        return self.b1
+
+    def getA1(self):
+        return self.a1
+
+    def setB0(self, b0):
+        self.b0 = b0
+
+    def setB1(self, b1):
+        self.b1 = b1
+
+    def setA1(self, a1):
+        self.a1 = a1
