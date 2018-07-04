@@ -7,7 +7,7 @@ from geometry_msgs.msg import Vector3
 from mav_msgs.msg import Actuators
 from nav_msgs.msg import Odometry
 from std_msgs.msg import Float64
-from pid import PID
+from pid_smc import PID
 from trajectory_msgs.msg import MultiDOFJointTrajectory
 from first_order_filter import FirstOrderFilter
 
@@ -68,8 +68,8 @@ class MorusController:
 
         # Height controller
         # TODO: Implement real derivative in PID
-        self.pid_z = PID(4, 0, 1)
-        self.pid_vz = PID(75, 20, 10)
+        self.pid_z = PID(1.5, 0.0, 0.1) # PID(4, 0, 1)
+        self.pid_vz = PID(40, 0.1, 0)   # 75, 20, 10)
 
         # Z error compensator
         self.z_compensator = FirstOrderFilter(0.3, -0.299, 1)
@@ -209,6 +209,11 @@ class MorusController:
                 ]
             self.motor_pub.publish(self.motor_vel_msg)
 
+            print("Z_error: {}".format(z_error))
+            print("VZ_error: {}".format(vz_error))
+            print("z_sp: {}".format(self.pose_sp.z))
+            print("vz_sp: {}\n".format(self.vel_sp.z))
+
     def calculate_height_velocity_ref(self, dt, z_error):
 
         # Calculate z position PID output
@@ -226,10 +231,10 @@ class MorusController:
 
         # Calculate z velocity reference
         vel_ref = \
-            z_pid_output + \
-            self.z_compensator_gain * z_error_compensator_term + \
-            z_pos_switch_output + \
-            z_ref_ff_term
+            z_pid_output #+ \
+            #self.z_compensator_gain * z_error_compensator_term + \
+            #z_pos_switch_output + \
+            #z_ref_ff_term
 
         return vel_ref
 
@@ -249,10 +254,10 @@ class MorusController:
 
         # Calculate rotor velocity
         rotor_velocity = \
-            vz_ref_ff_term + \
-            vz_pid_output + \
-            self.vz_compensator_gain * vz_error_compensator_term + \
-            vz_switch_output
+            vz_pid_output #+ \
+            #vz_ref_ff_term + \
+            #self.vz_compensator_gain * vz_error_compensator_term + \
+            #vz_switch_output
 
         return rotor_velocity
 

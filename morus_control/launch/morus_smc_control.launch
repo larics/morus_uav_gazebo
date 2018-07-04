@@ -29,6 +29,10 @@
         <remap from="/robot_description" to="$(arg namespace)/robot_description"/>
       </node>
 
-      <node pkg="morus_control" type="smc_ric_height_attitude.py" name="height_controller" output="screen"  ns="$(arg namespace)">
+      <node pkg="morus_control" type="smc_ric_height_attitude.py" name="smc_height_control" output="screen"  ns="$(arg namespace)">
       </node>
+
+      <node pkg="morus_control" type="mass_ctl_attitude.py" name="mass_ctl_attitude" output="screen"  ns="$(arg namespace)">
+      </node>
+
 </launch>
