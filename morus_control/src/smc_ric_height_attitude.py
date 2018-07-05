@@ -75,7 +75,7 @@ class MorusController:
 
         # Controller rate
         self.controller_rate = 100
-        self.rate = rospy.Rate(self.controller_rate)
+        self.controller_ts = 1.0 / self.controller_rate
 
         # Height controller
         # TODO: Implement real derivative in PID
@@ -251,9 +251,14 @@ class MorusController:
         self.t_old = rospy.Time.now()
 
         while not rospy.is_shutdown():
+
+            # Sleep for controller rate
+            rospy.sleep(self.controller_ts)
+
             t = rospy.Time.now()
             dt = (t - self.t_old).to_sec()
             self.t_old = t
+            #print(dt)
 
             if dt < 1.0/self.controller_rate:
                 continue
