@@ -82,6 +82,11 @@ class MorusController:
         self.pid_z = PID(4, 0, 1)
         self.pid_vz = PID(40, 0.1, 0)
 
+        self.lambda_z = 0.1
+        self.lambda_vz = 2
+        self.pid_compensator_z = PID(2 * self.lambda_z, self.lambda_z ** 2, 1)
+        self.pid_compensator_vz = PID(2 * self.lambda_vz, self.lambda_vz ** 2, 1)
+
         # Z error compensator
         self.z_compensator = FirstOrderFilter(0.3, -0.299, 1)
         self.z_compensator_gain = 0.05
@@ -127,14 +132,10 @@ class MorusController:
             config.vz_ki = self.pid_vz.get_ki()
             config.vz_kd = self.pid_vz.get_kd()
 
-            config.z_comp_b0 = self.z_compensator.getB0()
-            config.z_comp_b1 = self.z_compensator.getB1()
-            config.z_comp_a1 = self.z_compensator.getA1()
+            config.z_lambda = self.lambda_z
             config.z_comp_gain = self.z_compensator_gain
 
-            config.vz_comp_b0 = self.vz_compensator.getB0()
-            config.vz_comp_b1 = self.vz_compensator.getB1()
-            config.vz_comp_a1 = self.vz_compensator.getA1()
+            config.vz_lambda = self.lambda_vz
             config.vz_comp_gain = self.vz_compensator_gain
 
             config.switch_eps = self.eps
@@ -154,14 +155,14 @@ class MorusController:
             self.pid_vz.set_kd(config.vz_kd)
 
             self.z_compensator_gain = config.z_comp_gain
-            self.z_compensator.setB0(config.z_comp_b0)
-            self.z_compensator.setB1(config.z_comp_b1)
-            self.z_compensator.setA1(config.z_comp_a1)
+            self.pid_compensator_z.set_kp(2 * config.z_lambda)
+            self.pid_compensator_z.set_ki(config.z_lambda ** 2)
+            # self.pid_compensator_z.set_kd(config.z_comp_kd)
 
             self.vz_compensator_gain = config.vz_comp_gain
-            self.vz_compensator.setB0(config.vz_comp_b0)
-            self.vz_compensator.setB1(config.vz_comp_b1)
-            self.vz_compensator.setA1(config.vz_comp_a1)
+            self.pid_compensator_vz.set_kp(2 * config.vz_lambda)
+            self.pid_compensator_vz.set_ki(config.vz_lambda ** 2)
+            # self.pid_compensator_vz.set_kd(config.vz_comp_kd)
 
             self.eps = config.switch_eps
             self.z_pos_beta = config.z_beta
@@ -258,7 +259,7 @@ class MorusController:
             t = rospy.Time.now()
             dt = (t - self.t_old).to_sec()
             self.t_old = t
-            #print(dt)
+            print(dt)
 
             if dt < 1.0/self.controller_rate:
                 continue
