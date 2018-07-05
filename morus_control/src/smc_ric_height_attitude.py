@@ -317,8 +317,8 @@ class MorusController:
 
         # Calculate z velocity reference
         vel_ref = \
-            z_pid_output + \
-            z_pos_switch_output #+ \
+            z_pid_output #+ \
+            #z_pos_switch_output #+ \
             #self.z_compensator_gain * z_error_compensator_term + \
             #z_ref_ff_term
 
@@ -346,8 +346,8 @@ class MorusController:
 
         # Calculate rotor velocity
         rotor_velocity = \
-            vz_pid_output + \
-            vz_switch_output #+ \
+            vz_pid_output #+ \
+            # vz_switch_output #+ \
             # self.vz_compensator_gain * vz_error_compensator_term + \
             # vz_ref_ff_term
 
