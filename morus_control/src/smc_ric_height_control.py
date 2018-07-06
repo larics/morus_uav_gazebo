@@ -14,8 +14,10 @@ from morus_msgs.msg import SMCStatus
 from std_msgs.msg import Header
 from dynamic_reconfigure.server import Server
 from morus_control.cfg import SmcMmcuavPositionCtlParamsConfig
+from nonlinear_blocks import deadzone, saturation
 
-class MorusController:
+
+class SmcHeightController:
 
     def __init__(self):
         """Constructor initializes all needed variables"""
@@ -27,17 +29,6 @@ class MorusController:
             "pos_ref",
             Vector3,
             self.setpoint_cb)
-        # Referent angle subscriber
-        self.angle_subscriber = rospy.Subscriber(
-            "angle_ref",
-            Vector3,
-            self.angle_cb)
-
-        # Odometry measurements subscriber
-        self.odom_subscriber = rospy.Subscriber(
-            "odometry",
-            Odometry,
-            self.odometry_callback)
 
         # initialize publishers
         self.motor_pub = rospy.Publisher(
@@ -46,15 +37,11 @@ class MorusController:
             queue_size=10)
         self.motor_vel_msg = Actuators()
 
-        # Mass command publishers
-        self.pub_mass0 = rospy.Publisher(
-            'movable_mass_0_position_controller/command', Float64, queue_size=1)
-        self.pub_mass1 = rospy.Publisher(
-            'movable_mass_1_position_controller/command', Float64, queue_size=1)
-        self.pub_mass2 = rospy.Publisher(
-            'movable_mass_2_position_controller/command', Float64, queue_size=1)
-        self.pub_mass3 = rospy.Publisher(
-            'movable_mass_3_position_controller/command', Float64, queue_size=1)
+        # Odometry measurements subscriber
+        self.odom_subscriber = rospy.Subscriber(
+            "odometry",
+            Odometry,
+            self.odometry_callback)
 
         # Status message publisher
         self.status_pub = rospy.Publisher(
@@ -65,9 +52,6 @@ class MorusController:
 
         self.pose_sp = Vector3(0., 0., 0.62)
         self.vel_sp = Vector3(0., 0., 0.)
-        self.euler_sp = Vector3(0., 0., 0.)
-        self.euler_mv = Vector3(0., 0., 0.)
-        self.euler_rate_mv = Vector3(0., 0., 0.)
         self.t_old = 0
 
         # define PID for height control
@@ -83,48 +67,20 @@ class MorusController:
         # VZ PID Control
         self.pid_vz = PID(40, 0.1, 0)
 
-        # TODO: Implement PID attitude control
-        # Roll PID control
-        # self.pid_roll = ...
-
-        # Roll rate PID control
-        # self.pid_roll_rate = ...
-
-        # Pitch PID control
-        # self.pid_pitch = ...
-
-        # Pich rate PID control
-        # self.pid_pitch_rate = ...
-
         # Z compensator
         self.lambda_z = 0.1
         self.pid_compensator_z = PID(2 * self.lambda_z, self.lambda_z ** 2, 1)
-
+        self.z_compensator_gain = 0.1
+        
         # VZ Compensator
         self.lambda_vz = 2
-        self.pid_compensator_vz = PID(2 * self.lambda_vz, self.lambda_vz ** 2, 1)
-
-        # TODO: Implement PID attitude compensators
-        # Roll compensator
-        # self.lambda_roll = ...
-        # self.pid_compensator_roll = ...
-
-        # Roll rate compensator
-        # self.lambda_roll_rate = ...
-        # self.pid_compensator_roll_rate = ...
-
-        # Pitch compensator
-        # self.lambda_pitch = ...
-        # self.pid_compensator_pitch = ...
-
-        # Pitch rate compensator
-        # self.lambda_pitch_rate = ...
-        # self.pid_compensator_pitch_rate = ...
+        self.pid_compensator_vz = PID(2 * self.lambda_vz, self.lambda_vz ** 2, 0)
+        self.vz_compensator_gain = 35 #100
 
         # Define switch function constants
         self.eps = 0.01
         self.z_pos_beta = 0.01
-        self.vz_beta = 10 # 180
+        self.vz_beta = 50 # 180
 
         # Define feed forward z position reference filter
         self.z_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
@@ -141,9 +97,17 @@ class MorusController:
         self.rotor_vel_min = -400
         self.rotor_vel_max = 400
         self.hover_speed = 432.4305
-
+        
         self.config_start = False
         self.cfg_server = Server(SmcMmcuavPositionCtlParamsConfig, self.cfg_callback)
+
+        # Z error compensator
+        # self.z_compensator = FirstOrderFilter(0.3, -0.299, 1)
+        # self.z_compensator_gain = 0.05
+
+        # VZ error compensator
+        # self.vz_compensator = FirstOrderFilter(1, -0.998, 1)
+        # self.vz_compensator_gain = 100
 
     def cfg_callback(self, config, level):
 
@@ -211,10 +175,6 @@ class MorusController:
         self.linvel_y = data.y
         self.linvel_z = data.z
 
-    def angle_cb(self, data):
-
-        self.euler_sp = Vector3(data.x, data.y, data.z)
-
     def odometry_callback(self, data):
         """Callback function for odometry subscriber"""
 
@@ -228,53 +188,14 @@ class MorusController:
         self.vy_mv = data.twist.twist.linear.y
         self.vz_mv = data.twist.twist.linear.z
 
-        self.p = data.twist.twist.angular.x
-        self.q = data.twist.twist.angular.y
-        self.r = data.twist.twist.angular.z
-
-        self.qx = data.pose.pose.orientation.x
-        self.qy = data.pose.pose.orientation.y
-        self.qz = data.pose.pose.orientation.z
-        self.qw = data.pose.pose.orientation.w
-
-    def odometry_gt_callback(self, data):
-        self.x_gt_mv = data.pose.pose.position.x
-        self.y_gt_mv = data.pose.pose.position.y
-        self.z_gt_mv = data.pose.pose.position.z
-
-    def convert_to_euler(self, qx, qy, qz, qw):
-        """Calculate roll, pitch and yaw angles/rates with quaternions"""
-
-        # conversion quaternion to euler (yaw - pitch - roll)
-        self.euler_mv.x = math.atan2(2 * (qw * qx + qy * qz), qw * qw
-                                     - qx * qx - qy * qy + qz * qz)
-        self.euler_mv.y = math.asin(2 * (qw * qy - qx * qz))
-        self.euler_mv.z = math.atan2(2 * (qw * qz + qx * qy), qw * qw
-                                     + qx * qx - qy * qy - qz * qz)
-
-        # gyro measurements (p,q,r)
-        p = self.p
-        q = self.q
-        r = self.r
-
-        sx = math.sin(self.euler_mv.x)  # sin(roll)
-        cx = math.cos(self.euler_mv.x)  # cos(roll)
-        cy = math.cos(self.euler_mv.y)  # cos(pitch)
-        ty = math.tan(self.euler_mv.y)  # cos(pitch)
-
-        # conversion gyro measurements to roll_rate, pitch_rate, yaw_rate
-        self.euler_rate_mv.x = p + sx * ty * q + cx * ty * r
-        self.euler_rate_mv.y = cx * q - sx * r
-        self.euler_rate_mv.z = sx / cy * q + cx / cy * r
-
     def run(self):
         """ Run ROS node - computes SMC algorithm for z and vz control """
 
         while not self.first_measurement:
-            print("MorusControl.run() - Waiting for first measurement.")
+            print("SmcHeightControl.run() - Waiting for first measurement.")
             rospy.sleep(self.sleep_sec)
 
-        print("MorusControl.run() - Starting position control")
+        print("SmcHeightControl.run() - Starting height control")
         self.t_old = rospy.Time.now()
 
         while not rospy.is_shutdown():
@@ -285,13 +206,9 @@ class MorusController:
             t = rospy.Time.now()
             dt = (t - self.t_old).to_sec()
             self.t_old = t
-            print(dt)
 
             if dt < 1.0/self.controller_rate:
                 continue
-
-            # Calculate roll, pitch, yaw
-            self.convert_to_euler(self.qx, self.qy, self.qz, self.qw)
 
             # Z POSITION BLOCK
             z_error = self.pose_sp.z - self.z_mv
@@ -303,23 +220,6 @@ class MorusController:
             rotor_velocity = self.calculate_rotor_velocities(dt, vz_error)
             rotor_velocity = saturation(rotor_velocity, self.rotor_vel_min, self.rotor_vel_max)
 
-            # TODO: Implement pitch / roll control
-            # ROLL BLOCK
-            # roll_error = ...
-            # roll_rate_sp = ...
-
-            # ROLL RATE BLOCK
-            # roll_rate_error = ...
-            # mass_roll_offset = ...
-
-            # PITCH BLOCK
-            # pitch_error = ...
-            # pitch_rate_sp = ...
-
-            # PITCH RATE BLOCK
-            # pitch_rate_error = ...
-            # mass_pitch_offset = ...
-
             # Construct rotor velocity message
             self.motor_vel_msg.angular_velocities = \
                 [
@@ -329,12 +229,6 @@ class MorusController:
                     self.hover_speed + rotor_velocity
                 ]
             self.motor_pub.publish(self.motor_vel_msg)
-
-            # TODO: Publish mass offset command values
-            # self.pub_mass0.publish(...)
-            # self.pub_mass1.publish(...)
-            # self.pub_mass2.publish(...)
-            # self.pub_mass3.publish(...)
 
             # Update status message
             head = Header()
@@ -356,10 +250,11 @@ class MorusController:
 
         # Calculate z position error compensator output
         z_error = self.pose_sp.z - self.z_mv
-        z_error_compensator_term = self.z_compensator.compute(z_error)
+        z_error_compensator_term = self.pid_compensator_z.compute(z_error, dt)
 
         # Calculate z position switch function output
-        z_pos_switch_output = self.z_pos_beta * math.tanh(z_error_compensator_term / self.eps)
+        z_pos_switch_output = self.z_pos_beta * math.tanh(
+            deadzone(z_error_compensator_term / self.eps, -0.001, 0.001))
 
         # Calculate feed-forward term from z position reference
         z_ref_ff_term = self.z_feed_forward_gain * self.z_feed_forward_filter.compute(self.pose_sp.z)
@@ -379,14 +274,6 @@ class MorusController:
 
         return vel_ref
 
-    def calculate_roll_rate_ref(self, dt, roll_error):
-        # TODO: Calculate roll rate setpoint with given roll error
-        pass
-
-    def calculate_pitch_rate_ref(self, dt, pitch_error):
-        # TODO: Calculate pitch rate setpoint with given pitch error
-        pass
-
     def calculate_rotor_velocities(self, dt, vz_error):
 
         # Calculate z velocity PID output
@@ -396,10 +283,11 @@ class MorusController:
         vz_ref_ff_term = self.vz_feed_forward_gain * self.vz_feed_forward_filter.compute(self.vel_sp.z)
 
         # Calculate z velocity error compensator output
-        vz_error_compensator_term = self.vz_compensator.compute(vz_error)
+        vz_error_compensator_term = self.pid_compensator_vz.compute(vz_error, dt)
 
         # Calculate velocity switch function output
-        vz_switch_output = self.vz_beta * math.tanh(vz_error_compensator_term / self.eps)
+        vz_switch_output = self.vz_beta * math.tanh(
+            deadzone(vz_error_compensator_term / self.eps, -0.001, 0.001))
 
         # Update status message
         self.status_msg.vz_comp = self.vz_compensator_gain * vz_error_compensator_term
@@ -416,29 +304,13 @@ class MorusController:
 
         return rotor_velocity
 
-    def calculate_mass_offset_roll(self, dt, roll_rate_error):
-        # TODO: Calculate mass offset with given roll rate error
-        pass
-
-    def calculate_mass_offset_pitch(self, dt, pitch_rate_error):
-        # TODO: Calculate mass offset with given pitch rate error
-        pass
-
-
-def saturation(value, low, high):
-    if value > high:
-        return high
-    elif value < low:
-        return low
-    else:
-        return value
-
 
 if __name__ == "__main__":
-    rospy.init_node('morus_control', anonymous=True)
+
+    rospy.init_node('smc_height_control', anonymous=True)
     try:
-        morus_control = MorusController()
-        morus_control.run()
+        height_control = SmcHeightController()
+        height_control.run()
     except rospy.ROSInterruptException:
         pass
 
