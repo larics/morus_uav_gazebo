@@ -77,36 +77,62 @@ class MorusController:
         self.controller_rate = 100
         self.controller_ts = 1.0 / self.controller_rate
 
-        # Height controller
-        # TODO: Implement real derivative in PID
+        # Z PID Control
         self.pid_z = PID(4, 0, 1)
+
+        # VZ PID Control
         self.pid_vz = PID(40, 0.1, 0)
 
+        # TODO: Implement PID attitude control
+        # Roll PID control
+        # self.pid_roll = ...
+
+        # Roll rate PID control
+        # self.pid_roll_rate = ...
+
+        # Pitch PID control
+        # self.pid_pitch = ...
+
+        # Pich rate PID control
+        # self.pid_pitch_rate = ...
+
+        # Z compensator
         self.lambda_z = 0.1
-        self.lambda_vz = 2
         self.pid_compensator_z = PID(2 * self.lambda_z, self.lambda_z ** 2, 1)
+
+        # VZ Compensator
+        self.lambda_vz = 2
         self.pid_compensator_vz = PID(2 * self.lambda_vz, self.lambda_vz ** 2, 1)
 
-        # Z error compensator
-        self.z_compensator = FirstOrderFilter(0.3, -0.299, 1)
-        self.z_compensator_gain = 0.05
+        # TODO: Implement PID attitude compensators
+        # Roll compensator
+        # self.lambda_roll = ...
+        # self.pid_compensator_roll = ...
 
-        # VZ error compensator
-        self.vz_compensator = FirstOrderFilter(1, -0.998, 1)
-        self.vz_compensator_gain = 100
+        # Roll rate compensator
+        # self.lambda_roll_rate = ...
+        # self.pid_compensator_roll_rate = ...
+
+        # Pitch compensator
+        # self.lambda_pitch = ...
+        # self.pid_compensator_pitch = ...
+
+        # Pitch rate compensator
+        # self.lambda_pitch_rate = ...
+        # self.pid_compensator_pitch_rate = ...
 
         # Define switch function constants
         self.eps = 0.01
         self.z_pos_beta = 0.01
-        self.vz_beta = 30 # 180
+        self.vz_beta = 10 # 180
 
         # Define feed forward z position reference filter
         self.z_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.z_feed_forward_gain = 1
+        self.z_feed_forward_gain = 0.1
 
         # Define feed forward z velocity reference filter
         self.vz_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.vz_feed_forward_gain = 8
+        self.vz_feed_forward_gain = 0.5
 
         # Define saturation limits
         self.vz_ref_min = -5
@@ -277,6 +303,23 @@ class MorusController:
             rotor_velocity = self.calculate_rotor_velocities(dt, vz_error)
             rotor_velocity = saturation(rotor_velocity, self.rotor_vel_min, self.rotor_vel_max)
 
+            # TODO: Implement pitch / roll control
+            # ROLL BLOCK
+            # roll_error = ...
+            # roll_rate_sp = ...
+
+            # ROLL RATE BLOCK
+            # roll_rate_error = ...
+            # mass_roll_offset = ...
+
+            # PITCH BLOCK
+            # pitch_error = ...
+            # pitch_rate_sp = ...
+
+            # PITCH RATE BLOCK
+            # pitch_rate_error = ...
+            # mass_pitch_offset = ...
+
             # Construct rotor velocity message
             self.motor_vel_msg.angular_velocities = \
                 [
@@ -286,6 +329,12 @@ class MorusController:
                     self.hover_speed + rotor_velocity
                 ]
             self.motor_pub.publish(self.motor_vel_msg)
+
+            # TODO: Publish mass offset command values
+            # self.pub_mass0.publish(...)
+            # self.pub_mass1.publish(...)
+            # self.pub_mass2.publish(...)
+            # self.pub_mass3.publish(...)
 
             # Update status message
             head = Header()
@@ -323,12 +372,20 @@ class MorusController:
 
         # Calculate z velocity reference
         vel_ref = \
-            z_pid_output #+ \
-            #z_pos_switch_output #+ \
-            #self.z_compensator_gain * z_error_compensator_term + \
-            #z_ref_ff_term
+            z_pid_output + \
+            z_pos_switch_output + \
+            self.z_compensator_gain * z_error_compensator_term #+ \
+            # z_ref_ff_term
 
         return vel_ref
+
+    def calculate_roll_rate_ref(self, dt, roll_error):
+        # TODO: Calculate roll rate setpoint with given roll error
+        pass
+
+    def calculate_pitch_rate_ref(self, dt, pitch_error):
+        # TODO: Calculate pitch rate setpoint with given pitch error
+        pass
 
     def calculate_rotor_velocities(self, dt, vz_error):
 
@@ -352,12 +409,20 @@ class MorusController:
 
         # Calculate rotor velocity
         rotor_velocity = \
-            vz_pid_output #+ \
-            # vz_switch_output #+ \
-            # self.vz_compensator_gain * vz_error_compensator_term + \
-            # vz_ref_ff_term
+            vz_pid_output + \
+            vz_switch_output + \
+            self.vz_compensator_gain * vz_error_compensator_term + \
+            vz_ref_ff_term
 
         return rotor_velocity
+
+    def calculate_mass_offset_roll(self, dt, roll_rate_error):
+        # TODO: Calculate mass offset with given roll rate error
+        pass
+
+    def calculate_mass_offset_pitch(self, dt, pitch_rate_error):
+        # TODO: Calculate mass offset with given pitch rate error
+        pass
 
 
 def saturation(value, low, high):
