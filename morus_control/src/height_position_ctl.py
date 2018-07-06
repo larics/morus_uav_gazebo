@@ -38,7 +38,7 @@ class HeightControl:
         self.start_flag = False         # indicates if we received the first measurement
         self.config_start = False       # flag indicates if the config callback is called for the first time
 
-        self.z_sp = 0                   # z-position set point
+        self.z_sp = 2                   # z-position set point
         self.z_ref_filt = 0             # z ref filtered
         self.z_mv = 0                   # z-position measured value
         self.pid_z = PID()              # pid instance for z control
@@ -66,9 +66,9 @@ class HeightControl:
         self.pid_vz.set_kd(10)#10.89)
 
         # Yaw rate params
-        self.pid_yaw_rate.set_kp(75)
-        self.pid_yaw_rate.set_ki(5)
-        self.pid_yaw_rate.set_kd(15)
+        self.pid_yaw_rate.set_kp(15)
+        self.pid_yaw_rate.set_ki(0.1)
+        self.pid_yaw_rate.set_kd(25)
         #########################################################
         #########################################################
 
