@@ -24,6 +24,33 @@
   <xacro:property name="rotor_drag_coefficient" value="8.06428e-04" />
   <xacro:property name="rolling_moment_coefficient" value="0.00001" />
 
+  <!--wing properties -->
+  <xacro:property name="wing_mass" value="0.001"/> <!-- [kg] -->
+  <xacro:property name="wing_x" value="0.01"/> <!-- [m] -->
+  <xacro:property name="wing_y" value="0.66"/> <!-- [m] -->
+  <xacro:property name="wing_z" value="0.1"/> <!-- [m] -->
+  <xacro:property name="arm_height" value="0.1" /> <!-- [m] added arm_height for no wing-rotor interaction -->
+  <xacro:property name="area_control_flap" value="0.066"/> <!-- [m^2] -->
+  <xacro:property name="area_antitorque_flap" value="0.066"/> <!-- [m^2] -->
+
+  <!--realistic rotor properties -->
+  <xacro:property name="fluid_density" value="1.2041" />  <!-- air -->
+  <xacro:property name="distance_antitorque_flap" value="0.08" /> <!-- [m] distance from centre of gravity of rotor, force*distance=moment-->
+  <xacro:property name="distance_control_flap" value="0.1" /> <!-- [m] -->
+  <xacro:property name="thrust_coefficient" value="0.000456874" />  <!-- motor_constant Kf-->
+  <xacro:property name="torque_coefficient" value="0.01" /> <!-- moment_constant Kt-->
+  <xacro:property name="slip_velocity_coefficient" value="2.7e-02" /> <!-- Kv -->
+  
+  <xacro:property name="lift_coefficient_control_flap" value="8.5e-02" />  <!-- Clc -->
+  <xacro:property name="drag_coefficient_control_flap" value="1.3e-01" />  <!-- Cdc -->
+  <xacro:property name="lift_coefficient_antitorque_flap" value="3.4e-02" />  <!-- Cla -->
+  <xacro:property name="drag_coefficient_antitorque_flap" value="1.3e-01" />  <!-- Cda -->
+
+  <xacro:property name="lift_coefficient_control_flap_at0" value="0" />  <!-- Clc0 not used in the formulas -->
+  <xacro:property name="drag_coefficient_control_flap_at0" value="7.47e-03" />  <!-- Cdc0 -->
+  <xacro:property name="lift_coefficient_antitorque_flap_at0" value="1.358e-01" />  <!-- Cla0 -->
+  <xacro:property name="drag_coefficient_antitorque_flap_at0" value="3.23e-03" />  <!-- Cda0 -->
+
   <xacro:property name="movable_mass_mass" value="1" />
   <xacro:property name="movable_mass_dimension" value="0.08" />
   <xacro:property name="movable_mass_offset" value="0.025" />
@@ -34,6 +61,7 @@
   <xacro:property name="sin45" value="0.7071" />
   <xacro:property name="cos45" value="0.7071" />
   <xacro:property name="PI" value="3.14" />
+  <xacro:property name="PIhalf" value="1.5707" />
 
   <!-- Property Blocks -->
   <xacro:property name="body_inertia">
@@ -68,6 +96,15 @@
     ixy="0.0" ixz="0.0"  iyz="0.0" /> <!-- [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] -->
   </xacro:property>
 
+  <!-- wing inertia -->
+  <xacro:property name="wing_inertia">
+    <inertia 
+    ixx="${(wing_mass * wing_x * wing_x)/6}" 
+    iyy="${(wing_mass * wing_y * wing_y)/6}" 
+    izz="${(wing_mass * wing_z * wing_z)/6}" 
+    ixy="0.0" ixz="0.0"  iyz="0.0" /> <!-- [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] [kg*m^2] -->
+  </xacro:property>
+
   <!-- Included URDF Files -->
   <xacro:include filename="$(find morus_description)/urdf/multirotor_base.urdf.xacro" />
 
@@ -82,8 +119,72 @@
     <xacro:insert_block name="body_inertia" />
   </xacro:multirotor_base_macro>
 
+  <!-- Instantiate wing 0 -->
+  <xacro:wing
+    robot_namespace="$(arg name)" 
+    parent="base_link"
+    wing_number="0"
+    mass="${wing_mass}"
+    wing_x="${wing_x}"
+    wing_y="${wing_y}"
+    wing_z="${wing_z}"
+    x_axis="0"
+    y_axis="1"
+    color="Red">
+    <origin xyz="${arm_length+arm_offset} 0 ${-arm_height}" rpy="0 0 0" />
+    <xacro:insert_block name="wing_inertia"/>
+  </xacro:wing>
 
-  <!-- Instantiate tilt 0-->
+  <!-- Instantiate wing 1-->
+  <xacro:wing
+    robot_namespace="$(arg name)" 
+    parent="base_link"
+    wing_number="1"
+    mass="${wing_mass}"
+    wing_x="${wing_x}"
+    wing_y="${wing_y}"
+    wing_z="${wing_z}"
+    x_axis="0"
+    y_axis="1"
+    color="Blue">
+    <origin xyz="0 ${arm_length+arm_offset} ${-arm_height}" rpy="0 0 ${PIhalf}" />
+    <xacro:insert_block name="wing_inertia"/>
+  </xacro:wing>
+  <!-- same x_axis and y_axis values as wing 0 because rpy flips the coordinate system by PIhalf-->
+
+  <!-- Instantiate wing 2-->
+  <xacro:wing
+    robot_namespace="$(arg name)" 
+    parent="base_link"
+    wing_number="2"
+    mass="${wing_mass}"
+    wing_x="${wing_x}"
+    wing_y="${wing_y}"
+    wing_z="${wing_z}"
+    x_axis="0"
+    y_axis="1"
+    color="Blue">
+    <origin xyz="${-(arm_length+arm_offset)} 0 ${-arm_height}" rpy="0 0 0" />
+    <xacro:insert_block name="wing_inertia"/>
+  </xacro:wing>
+
+  <!-- Instantiate wing 3-->
+  <xacro:wing
+    robot_namespace="$(arg name)" 
+    parent="base_link"
+    wing_number="3"
+    mass="${wing_mass}"
+    wing_x="${wing_x}"
+    wing_y="${wing_y}"
+    wing_z="${wing_z}"
+    x_axis="0"
+    y_axis="1"
+    color="Blue">
+    <origin xyz="0 ${-(arm_length+arm_offset)} ${-arm_height}" rpy="0 0 ${PIhalf}" />
+    <xacro:insert_block name="wing_inertia"/>
+  </xacro:wing>
+
+  <!-- Instantiate tilt 0
   <xacro:tilt 
     motor_number="0" 
     parent="base_link"
@@ -91,9 +192,9 @@
     x_axis="1"
     y_axis="0">
     <origin xyz="${arm_length+arm_offset} 0 0" rpy="0 0 0" />
-  </xacro:tilt>
+  </xacro:tilt>-->
 
-  <!-- Instantiate tilt 1 -->
+  <!-- Instantiate tilt 1 
   <xacro:tilt 
     motor_number="1" 
     parent="base_link"
@@ -101,10 +202,10 @@
     x_axis="0"
     y_axis="1">
     <origin xyz="0 ${arm_length+arm_offset} 0" rpy="0 0 0" />
-  </xacro:tilt>
+  </xacro:tilt>-->
 
 
-  <!-- Instantiate tilt 2-->
+  <!-- Instantiate tilt 2 
   <xacro:tilt 
     motor_number="2" 
     parent="base_link"
@@ -112,10 +213,10 @@
     x_axis="-1"
     y_axis="0">
     <origin xyz="${-(arm_length+arm_offset)} 0 0" rpy="0 0 0" />
-  </xacro:tilt>
+  </xacro:tilt>-->
 
 
-  <!-- Instantiate tilt 3 -->
+  <!-- Instantiate tilt 3 
   <xacro:tilt 
     motor_number="3" 
     parent="base_link"
@@ -123,47 +224,65 @@
     x_axis="0"
     y_axis="-1">
     <origin xyz="0 ${-(arm_length+arm_offset)} 0" rpy="0 0 0" />
-  </xacro:tilt>
+  </xacro:tilt>-->
 
 
   <xacro:transmisija
     trans_number="0"
-    joint_name="tilt_0_joint">
+    joint_name="wing_0_joint"> <!-- tilt_0_joint -->
   </xacro:transmisija>
 
   <xacro:transmisija
     trans_number="1"
-    joint_name="tilt_1_joint">
+    joint_name="wing_1_joint">
   </xacro:transmisija>
 
   <xacro:transmisija
     trans_number="2"
-    joint_name="tilt_2_joint">
+    joint_name="wing_2_joint">
   </xacro:transmisija>
 
   <xacro:transmisija
     trans_number="3"
-    joint_name="tilt_3_joint">
+    joint_name="wing_3_joint">
   </xacro:transmisija>
 
 
-  <!-- Instantiate rotors -->
+  <!-- Instantiate rotors -->   <!-- tilt_0-->
   <xacro:vertical_rotor
     robot_namespace="$(arg name)"
     suffix="front"
     direction="cw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
-    parent="tilt_0"
+
+    area_control_flap="${area_control_flap}"
+    area_antitorque_flap="${area_antitorque_flap}"
+    fluid_density ="${fluid_density}"
+    distance_control_flap="${distance_control_flap}"
+    distance_antitorque_flap="${distance_antitorque_flap}"
+    thrust_coefficient="${thrust_coefficient}"
+    torque_coefficient="${torque_coefficient}"
+    slip_velocity_coefficient="${slip_velocity_coefficient}"
+    lift_coefficient_control_flap="${lift_coefficient_control_flap}"
+    drag_coefficient_control_flap="${drag_coefficient_control_flap}"
+    lift_coefficient_antitorque_flap="${lift_coefficient_antitorque_flap}"
+    drag_coefficient_antitorque_flap="${drag_coefficient_antitorque_flap}"
+    lift_coefficient_control_flap_at0="${lift_coefficient_control_flap_at0}"
+    drag_coefficient_control_flap_at0="${drag_coefficient_control_flap_at0}"
+    lift_coefficient_antitorque_flap_at0="${lift_coefficient_antitorque_flap_at0}"
+    drag_coefficient_antitorque_flap_at0="${drag_coefficient_antitorque_flap_at0}"
+
+    parent="base_link"   
     mass_rotor="${mass_rotor}"
     radius_rotor="${radius_rotor}"
     time_constant="${time_constant}"
     max_rot_velocity="${max_rot_velocity}"
     motor_number="0"
-    rotor_drag_coefficient="${rotor_drag_coefficient}"
+    rotor_drag_coefficient="${rotor_drag_coefficient}"                
     rolling_moment_coefficient="${rolling_moment_coefficient}"
     color="Red">
-    <origin xyz="0 0 ${propeler_offset}" rpy="0 0 0" />
+    <origin xyz="${arm_length+arm_offset} 0 ${propeler_offset}" rpy="0 0 0" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
@@ -173,7 +292,23 @@
     direction="ccw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
-    parent="tilt_1"
+    area_control_flap="${area_control_flap}"
+    area_antitorque_flap="${area_antitorque_flap}"
+    fluid_density ="${fluid_density}"
+    distance_control_flap="${distance_control_flap}"
+    distance_antitorque_flap="${distance_antitorque_flap}"
+    thrust_coefficient="${thrust_coefficient}"
+    torque_coefficient="${torque_coefficient}"
+    slip_velocity_coefficient="${slip_velocity_coefficient}"
+    lift_coefficient_control_flap="${lift_coefficient_control_flap}"
+    drag_coefficient_control_flap="${drag_coefficient_control_flap}"
+    lift_coefficient_antitorque_flap="${lift_coefficient_antitorque_flap}"
+    drag_coefficient_antitorque_flap="${drag_coefficient_antitorque_flap}"
+    lift_coefficient_control_flap_at0="${lift_coefficient_control_flap_at0}"
+    drag_coefficient_control_flap_at0="${drag_coefficient_control_flap_at0}"
+    lift_coefficient_antitorque_flap_at0="${lift_coefficient_antitorque_flap_at0}"
+    drag_coefficient_antitorque_flap_at0="${drag_coefficient_antitorque_flap_at0}"
+    parent="base_link"
     mass_rotor="${mass_rotor}"
     radius_rotor="${radius_rotor}"
     time_constant="${time_constant}"
@@ -182,7 +317,7 @@
     rotor_drag_coefficient="${rotor_drag_coefficient}"
     rolling_moment_coefficient="${rolling_moment_coefficient}"
     color="Blue">
-    <origin xyz="0 0 ${propeler_offset}" rpy="0 0 0" />
+    <origin xyz="0 ${arm_length+arm_offset} ${propeler_offset}" rpy="0 0 0" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
@@ -192,7 +327,23 @@
     direction="cw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
-    parent="tilt_2"
+    area_control_flap="${area_control_flap}"
+    area_antitorque_flap="${area_antitorque_flap}"
+    fluid_density ="${fluid_density}"
+    distance_control_flap="${distance_control_flap}"
+    distance_antitorque_flap="${distance_antitorque_flap}"
+    thrust_coefficient="${thrust_coefficient}"
+    torque_coefficient="${torque_coefficient}"
+    slip_velocity_coefficient="${slip_velocity_coefficient}"
+    lift_coefficient_control_flap="${lift_coefficient_control_flap}"
+    drag_coefficient_control_flap="${drag_coefficient_control_flap}"
+    lift_coefficient_antitorque_flap="${lift_coefficient_antitorque_flap}"
+    drag_coefficient_antitorque_flap="${drag_coefficient_antitorque_flap}"
+    lift_coefficient_control_flap_at0="${lift_coefficient_control_flap_at0}"
+    drag_coefficient_control_flap_at0="${drag_coefficient_control_flap_at0}"
+    lift_coefficient_antitorque_flap_at0="${lift_coefficient_antitorque_flap_at0}"
+    drag_coefficient_antitorque_flap_at0="${drag_coefficient_antitorque_flap_at0}"
+    parent="base_link"
     mass_rotor="${mass_rotor}"
     radius_rotor="${radius_rotor}"
     time_constant="${time_constant}"
@@ -201,7 +352,7 @@
     rotor_drag_coefficient="${rotor_drag_coefficient}"
     rolling_moment_coefficient="${rolling_moment_coefficient}"
     color="Blue">
-    <origin xyz="0 0 ${propeler_offset}" rpy="0 0 0" />
+    <origin xyz="${-(arm_length+arm_offset)} 0 ${propeler_offset}" rpy="0 0 0" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 
@@ -211,7 +362,23 @@
     direction="ccw"
     motor_constant="${motor_constant}"
     moment_constant="${moment_constant}"
-    parent="tilt_3"
+    area_control_flap="${area_control_flap}"
+    area_antitorque_flap="${area_antitorque_flap}"
+    fluid_density ="${fluid_density}"
+    distance_control_flap="${distance_control_flap}"
+    distance_antitorque_flap="${distance_antitorque_flap}"
+    thrust_coefficient="${thrust_coefficient}"
+    torque_coefficient="${torque_coefficient}"
+    slip_velocity_coefficient="${slip_velocity_coefficient}"
+    lift_coefficient_control_flap="${lift_coefficient_control_flap}"
+    drag_coefficient_control_flap="${drag_coefficient_control_flap}"
+    lift_coefficient_antitorque_flap="${lift_coefficient_antitorque_flap}"
+    drag_coefficient_antitorque_flap="${drag_coefficient_antitorque_flap}"
+    lift_coefficient_control_flap_at0="${lift_coefficient_control_flap_at0}"
+    drag_coefficient_control_flap_at0="${drag_coefficient_control_flap_at0}"
+    lift_coefficient_antitorque_flap_at0="${lift_coefficient_antitorque_flap_at0}"
+    drag_coefficient_antitorque_flap_at0="${drag_coefficient_antitorque_flap_at0}"
+    parent="base_link"
     mass_rotor="${mass_rotor}"
     radius_rotor="${radius_rotor}"
     time_constant="${time_constant}"
@@ -220,7 +387,7 @@
     rotor_drag_coefficient="${rotor_drag_coefficient}"
     rolling_moment_coefficient="${rolling_moment_coefficient}"
     color="Blue">
-    <origin xyz="0 0 ${propeler_offset}" rpy="0 0 0" />
+    <origin xyz="0 ${-(arm_length+arm_offset)} ${propeler_offset}" rpy="0 0 0" />
     <xacro:insert_block name="rotor_inertia" />
   </xacro:vertical_rotor>
 

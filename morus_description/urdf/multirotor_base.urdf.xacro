@@ -103,7 +103,7 @@
   </xacro:macro>
 
   <!-- Macro file for tilted props. It defines joint between prop and body, and link which defines actual joint. Stick
-  is defined in other macro file-->
+  is defined in other macro file
   <xacro:macro name="tilt" params="parent motor_number x_axis y_axis color *origin">
     <joint name="tilt_${motor_number}_joint" type="revolute">
       <xacro:insert_block name="origin"/>
@@ -132,16 +132,72 @@
             iyy="1.0" iyz="0.0"
             izz="1.0" />
       </inertial>
-    </link>
+    </link>   
 
     <gazebo reference="tilt_${motor_number}">
       <material>Gazebo/${color}</material>
     </gazebo>
-  </xacro:macro>
+  </xacro:macro>  -->
+
+  <!-- Macro file for the wing. It defines joint between base and wing.-->
+  <xacro:macro name="wing" 
+     params="robot_namespace parent wing_number mass wing_x wing_y wing_z x_axis y_axis color *origin *inertia">
+    <joint name="wing_${wing_number}_joint" type="revolute">
+    <xacro:insert_block name="origin" />
+      <axis xyz="${x_axis} ${y_axis} 0"/>
+      <parent link="${parent}"/>
+      <child link="wing_${wing_number}"/>
+      <limit lower="-0.261799388" upper="0.261799388" effort="10000" velocity="10"/>
+    </joint>
+
+    <link name="wing_${wing_number}">
+      <visual>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <box size="${1*wing_x} ${1*wing_y} ${1*wing_z}"/>
+        </geometry>
+      </visual>
+
+      <collision>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <geometry>
+          <box size="${wing_x} ${wing_y} ${wing_z}"/>
+        </geometry>
+      </collision>
+      <inertial>
+        <origin rpy="0 0 0" xyz="0 0 0"/>
+        <mass value="${wing_mass}"/>
+        <xacro:insert_block name="inertia"/>
+      </inertial>
+    </link>
+
+    <!--gazebo> 
+      <plugin name="lifting_surface_${wing_number}" filename="libLiftDragPlugin.so">
+        <a0>0</a0>
+        <alpha_stall>0.3368</alpha_stall>
+        <cla>5.418</cla>
+        <cla_stall>-2.1419</cla_stall>
+        <cda>0.0</cda>
+        <cda_stall>0.0</cda_stall>
+        <cma>0.0</cma>
+        <cma_stall>0.0</cma_stall>
+        <area>3</area>
+        <fluid_density>1.2041</fluid_density>
+        <forward>-1 0 0</forward>
+        <upward>0 -1 0</upward>
+        <cp>0 0 1</cp>
+       
+        <control_joint_name>wing_${wing_number}_joint</control_joint_name>       
+      </plugin>
+    </gazebo-->
+    <gazebo reference="wing_${wing_number}">
+      <material>Gazebo/${color}</material>
+    </gazebo>
+</xacro:macro>
 
   <!-- Rotor joint and link -->
   <xacro:macro name="vertical_rotor"
-    params="robot_namespace suffix direction motor_constant moment_constant parent mass_rotor radius_rotor time_constant max_rot_velocity motor_number rotor_drag_coefficient rolling_moment_coefficient color *origin *inertia">
+    params="robot_namespace suffix direction motor_constant moment_constant area_control_flap area_antitorque_flap fluid_density distance_control_flap distance_antitorque_flap thrust_coefficient torque_coefficient slip_velocity_coefficient lift_coefficient_control_flap drag_coefficient_control_flap lift_coefficient_antitorque_flap drag_coefficient_antitorque_flap lift_coefficient_control_flap_at0 drag_coefficient_control_flap_at0 lift_coefficient_antitorque_flap_at0 drag_coefficient_antitorque_flap_at0 parent mass_rotor radius_rotor time_constant max_rot_velocity motor_number rotor_drag_coefficient rolling_moment_coefficient color *origin *inertia">
     <joint name="rotor_${motor_number}_joint" type="continuous">
       <xacro:insert_block name="origin" />
       <axis xyz="0 0 1" />
@@ -174,7 +230,7 @@
       </collision>
     </link>
     <gazebo>
-      <plugin name="${suffix}_motor_model" filename="librotors_gazebo_motor_model.so">
+      <plugin name="${suffix}_motor_model" filename="libmorus_gazebo_ductedfan_motor_model.so">
         <jointName>rotor_${motor_number}_joint</jointName>
         <linkName>rotor_${motor_number}</linkName>
         <turningDirection>${direction}</turningDirection>
@@ -188,6 +244,29 @@
         <rollingMomentCoefficient>${rolling_moment_coefficient}</rollingMomentCoefficient>
         <motorVelocityTopic>${robot_namespace}/motor_vel/${motor_number}</motorVelocityTopic>
         <rotorVelocitySlowdownSim>${rotor_velocity_slowdown_sim}</rotorVelocitySlowdownSim>
+
+        <angleControlFlapRefSubTopic>morus/angle_wing_${motor_number}_ref_value</angleControlFlapRefSubTopic>
+        <angleControlFlapCommandPubTopic>morus/angle_wing_${motor_number}_controller/command</angleControlFlapCommandPubTopic>
+        <angleControlFlapValueSubTopic>morus/angle_wing_${motor_number}_controller/state</angleControlFlapValueSubTopic>
+
+
+        <fluidDensity>${fluid_density}</fluidDensity>
+        <areaControlFlap>${area_control_flap}</areaControlFlap>
+        <areaAntitorqueFlap>${area_antitorque_flap}</areaAntitorqueFlap>
+        <distanceControlFlap>${distance_control_flap}</distanceControlFlap>
+        <distanceAntitorqueFlap>${distance_antitorque_flap}</distanceAntitorqueFlap>
+
+        <thrustCoefficient>${thrust_coefficient}</thrustCoefficient>
+        <torqueCoefficient>${torque_coefficient}</torqueCoefficient>
+        <slipVelocityCoefficient>${slip_velocity_coefficient}</slipVelocityCoefficient>
+        <liftCoefficientControlFlap>${lift_coefficient_control_flap}</liftCoefficientControlFlap>
+        <dragCoefficientControlFlap>${drag_coefficient_control_flap}</dragCoefficientControlFlap>
+        <liftCoefficientAntitorqueFlap>${lift_coefficient_antitorque_flap}</liftCoefficientAntitorqueFlap> 
+        <dragCoefficientAntitorqueFlap>${drag_coefficient_antitorque_flap}</dragCoefficientAntitorqueFlap>  
+        <liftCoefficientControlFlapAt0>${lift_coefficient_control_flap_at0}</liftCoefficientControlFlapAt0> 
+        <dragCoefficientControlFlapAt0>${drag_coefficient_control_flap_at0}</dragCoefficientControlFlapAt0>
+        <liftCoefficientAntitorqueFlapAt0>${lift_coefficient_antitorque_flap_at0}</liftCoefficientAntitorqueFlapAt0>
+        <dragCoefficientAntitorqueFlapAt0>${drag_coefficient_antitorque_flap_at0}</dragCoefficientAntitorqueFlapAt0>
       </plugin>
     </gazebo>
     <gazebo reference="rotor_${motor_number}">
