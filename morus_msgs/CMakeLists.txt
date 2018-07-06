@@ -3,14 +3,10 @@ project(morus_msgs)
 
 find_package(catkin REQUIRED message_generation std_msgs dynamic_reconfigure)
 
-add_definitions(-std=c++11)
-
 add_message_files(
   FILES
   MotorSpeed.msg
   PIDController.msg
-  AngleControlFlapRef.msg
-  AngleControlFlapValue.msg
 )
 
 generate_messages(DEPENDENCIES std_msgs)
@@ -21,9 +17,9 @@ cfg/MavCtlParams.cfg
 cfg/MavZCtlParams.cfg
 cfg/MavXYCtlParams.cfg
 cfg/MavAttitudeCtlParams.cfg
-cfg/RotorsVariationAttitudeCtlParams.cfg
 )
 
 catkin_package(
   CATKIN_DEPENDS message_runtime std_msgs
 )
+

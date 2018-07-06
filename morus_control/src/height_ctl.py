@@ -5,13 +5,13 @@ __author__ = 'thaus'
 import rospy, math
 from pid import PID
 from geometry_msgs.msg import Vector3, PoseWithCovarianceStamped, PoseStamped, TwistStamped
-from nav_msgs.msg import Odometry
-from std_msgs.msg import Float64
-from dynamic_reconfigure.server import Server
+from std_msgs.msg import Float32
+from dynamic_reconfigure.server import  Server
 from morus_msgs.cfg import MavZCtlParamsConfig
 from morus_msgs.msg import PIDController
 from morus_msgs.msg import MotorSpeed
 from mav_msgs.msg import Actuators
+from morus_uav_ros_msgs.msg import GmStatus
 
 
 class HeightControl:
@@ -22,10 +22,12 @@ class HeightControl:
         /morus/velocity   - used to extract vz of the vehicle
         /morus/pos_ref    - used to set the reference for z-position
         /morus/vel_ref    - used to set the reference for vz-position (useful for testing velocity controller)
+
     Publishes:
         /morus/mot_vel_ref  - referent value for thrust in terms of motor velocity (rad/s)
         /morus/pid_z        - publishes PID-z data - referent value, measured value, P, I, D and total component (useful for tuning params)
         /morus/pid_vz        - publishes PID-vz data - referent value, measured value, P, I, D and total component (useful for tuning params)
+
     Dynamic reconfigure is used to set controller params online.
     '''
 
@@ -37,7 +39,7 @@ class HeightControl:
         self.start_flag = False         # indicates if we received the first measurement
         self.config_start = False       # flag indicates if the config callback is called for the first time
 
-        self.z_sp = 2                 # z-position set point
+        self.z_sp = 2                   # z-position set point
         self.z_ref_filt = 0             # z ref filtered
         self.z_mv = 0                   # z-position measured value
         self.pid_z = PID()              # pid instance for z control
@@ -49,40 +51,42 @@ class HeightControl:
         #########################################################
         #########################################################
         # Add parameters for z controller
-        self.pid_z.set_kp(4.5)
-        self.pid_z.set_ki(0.08)
-        self.pid_z.set_kd(2)
+        self.pid_z.set_kp(10)
+        self.pid_z.set_ki(0.2)
+        self.pid_z.set_kd(10)
 
         # Add parameters for vz controller
-        self.pid_vz.set_kp(40)#87.2)
-        self.pid_vz.set_ki(3.5)
-        self.pid_vz.set_kd(1.5)#10.89)
+        self.pid_vz.set_kp(1)#87.2)
+        self.pid_vz.set_ki(0.0)
+        self.pid_vz.set_kd(0)#10.89)
         #########################################################
         #########################################################
 
 
-        self.pid_z.set_lim_high(500)      # max vertical ascent speed
-        self.pid_z.set_lim_low(-500)      # max vertical descent speed
+        self.pid_z.set_lim_high(5)      # max vertical ascent speed
+        self.pid_z.set_lim_low(-5)      # max vertical descent speed
 
-        self.pid_vz.set_lim_high(500)   # max velocity of a motor
-        self.pid_vz.set_lim_low(-500)   # min velocity of a motor
+        self.pid_vz.set_lim_high(350)   # max velocity of a motor
+        self.pid_vz.set_lim_low(-350)   # min velocity of a motor
 
         self.mot_speed = 0              # referent motors velocity, computed by PID cascade
+
+        self.gm_attitude_ctl = 0        # flag indicates if attitude control is turned on
+        self.gm_attitude_ctl = rospy.get_param('~gm_attitude_ctl', 0)
 
         self.t_old = 0
 
         rospy.Subscriber('pose', PoseStamped, self.pose_cb)
-        rospy.Subscriber('odometry', Odometry, self.vel_cb)
+        rospy.Subscriber('velocity', TwistStamped, self.vel_cb)
         rospy.Subscriber('vel_ref', Vector3, self.vel_ref_cb)
         rospy.Subscriber('pos_ref', Vector3, self.pos_ref_cb)
         self.pub_pid_z = rospy.Publisher('pid_z', PIDController, queue_size=1)
         self.pub_pid_vz = rospy.Publisher('pid_vz', PIDController, queue_size=1)
-        self.mot_ref_pub = rospy.Publisher('mot_vel_ref', Float64, queue_size=1)
+        self.mot_ref_pub = rospy.Publisher('mot_vel_ref', Float32, queue_size=1)
         self.pub_mot = rospy.Publisher('/gazebo/command/motor_speed', Actuators, queue_size=1)
-        #self.pub_gm_mot = rospy.Publisher('collectiveThrust', GmStatus, queue_size=1)       
-        self.cfg_server = Server(MavZCtlParamsConfig, self.cfg_callback)
-        self.rate = rospy.get_param('~rate', 100)
-        self.ros_rate = rospy.Rate(float(self.rate))                 # attitude control at 100 Hz
+	self.pub_gm_mot = rospy.Publisher('collectiveThrust', GmStatus, queue_size=1)       
+	self.cfg_server = Server(MavZCtlParamsConfig, self.cfg_callback)
+        self.ros_rate = rospy.Rate(10)
         self.t_start = rospy.Time.now()
 
     def run(self):
@@ -90,7 +94,7 @@ class HeightControl:
         Runs ROS node - computes PID algorithms for z and vz control.
         '''
 
-        while not self.start_flag and not rospy.is_shutdown():
+        while not self.start_flag:
             print 'Waiting for pose measurements.'
             rospy.sleep(0.5)
         print "Starting height control."
@@ -99,7 +103,7 @@ class HeightControl:
         #self.t_old = datetime.now()
 
         while not rospy.is_shutdown():
-            rospy.sleep(1.0/float(self.rate))
+            self.ros_rate.sleep()
 
             ########################################################
             ########################################################
@@ -112,35 +116,43 @@ class HeightControl:
             # When you implement attitude control set the flag self.attitude_ctl to 1
 
             #self.gm_attitude_ctl = 1  # don't forget to set me to 1 when you implement attitude ctl
+
             t = rospy.Time.now()
             dt = (t - self.t_old).to_sec()
             #t = datetime.now()
             #dt = (t - self.t_old).total_seconds()
-            if dt > 1.05/float(self.rate) or dt < 0.95/float(self.rate):
-                #print dt
-                pass
+            if dt > 0.105 or dt < 0.095:
+                print dt
 
             self.t_old = t
-            #                              (m_uav + 4*m_rotors)/(motor_constant*4)
-            self.mot_speed_hover = math.sqrt(9.81*(30+4*0.2)/(0.000456874*4.0))
+
+            self.mot_speed_hover = math.sqrt(293/0.000456874/4)
             # prefilter for reference
-            #a = 0.1
-            #self.z_ref_filt = (1-a) * self.z_ref_filt  + a * self.z_sp
-            vz_ref = self.pid_z.compute(self.z_sp, self.z_mv, dt)
-            #print "vz_ref", vz_ref
-            #vz_ref = self.vz_sp
+            a = 0.1
+            self.z_ref_filt = (1-a) * self.z_ref_filt  + a * self.z_sp
+            vz_ref = self.pid_z.compute(self.z_ref_filt, self.z_mv, dt)
             self.mot_speed = self.mot_speed_hover + \
                         self.pid_vz.compute(vz_ref, self.vz_mv, dt)
-            #print "mot_speed", self.mot_speed
-            #print "self.vz_mv", self.vz_mv
 
             ########################################################
             ########################################################
 
-            # gas motors are used to control attitude
-            # publish referent motor velocity to attitude controller
-            mot_speed_msg = Float64(self.mot_speed)
-            self.mot_ref_pub.publish(mot_speed_msg)
+
+            if self.gm_attitude_ctl == 0:
+                # moving masses are used to control attitude
+                # Publish motor velocities
+                mot_speed_msg = Actuators()
+                mot_speed_msg.angular_velocities = [self.mot_speed,self.mot_speed,self.mot_speed, self.mot_speed]
+                self.pub_mot.publish(mot_speed_msg)
+		gm_force_msg = GmStatus()
+		gm_force_msg.force_M = 4*self.mot_speed*0.000456874*self.mot_speed
+		gm_force_msg.motor_id = 5
+		self.pub_gm_mot.publish(gm_force_msg)
+            else:
+                # gas motors are used to control attitude
+                # publish referent motor velocity to attitude controller
+                mot_speed_msg = Float32(self.mot_speed)
+                self.mot_ref_pub.publish(mot_speed_msg)
 
 
             # Publish PID data - could be useful for tuning
@@ -152,7 +164,7 @@ class HeightControl:
         Pose (6DOF - position and orientation) callback.
         :param msg: Type PoseWithCovarianceStamped
         '''
-        if not self.start_flag:
+	if not self.start_flag:
             self.start_flag = True
         self.z_mv = msg.pose.position.z
 
@@ -163,7 +175,7 @@ class HeightControl:
         '''
         #if not self.start_flag:
         #    self.start_flag = True
-        self.vz_mv = msg.twist.twist.linear.z
+        self.vz_mv = msg.twist.linear.z
 
     def vel_ref_cb(self, msg):
         '''
@@ -184,7 +196,6 @@ class HeightControl:
         """
         Callback for dynamically reconfigurable parameters (P,I,D gains for height and velocity controller)
         """
-        print "CFG callback"
 
         if not self.config_start:
             # callback is called for the first time. Use this to set the new params to the config server
@@ -212,6 +223,7 @@ class HeightControl:
 
 if __name__ == '__main__':
 
-    rospy.init_node('z_controller')
+    rospy.init_node('mav_z_controller')
     height_ctl = HeightControl()
     height_ctl.run()
+
