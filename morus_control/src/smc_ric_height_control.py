@@ -10,10 +10,10 @@ from std_msgs.msg import Float64
 from pid_smc import PID
 from trajectory_msgs.msg import MultiDOFJointTrajectory
 from first_order_filter import FirstOrderFilter
-from morus_msgs.msg import SMCStatus
+from morus_msgs.msg import SMCStatusHeight
 from std_msgs.msg import Header
 from dynamic_reconfigure.server import Server
-from morus_control.cfg import SmcMmcuavPositionCtlParamsConfig
+from morus_control.cfg import SmcUavHeightCtlParamsConfig
 from nonlinear_blocks import deadzone, saturation
 
 
@@ -45,10 +45,10 @@ class SmcHeightController:
 
         # Status message publisher
         self.status_pub = rospy.Publisher(
-            'smc_status',
-            SMCStatus,
+            'smc_status_height',
+            SMCStatusHeight,
             queue_size=1)
-        self.status_msg = SMCStatus()
+        self.status_msg = SMCStatusHeight()
 
         self.pose_sp = Vector3(0., 0., 0.62)
         self.vel_sp = Vector3(0., 0., 0.)
@@ -99,7 +99,7 @@ class SmcHeightController:
         self.hover_speed = 432.4305
         
         self.config_start = False
-        self.cfg_server = Server(SmcMmcuavPositionCtlParamsConfig, self.cfg_callback)
+        self.cfg_server = Server(SmcUavHeightCtlParamsConfig, self.cfg_callback)
 
         # Z error compensator
         # self.z_compensator = FirstOrderFilter(0.3, -0.299, 1)

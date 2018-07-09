@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+from mercurial.config import config
 
 import rospy
 import math
@@ -10,10 +11,10 @@ from std_msgs.msg import Float64
 from pid_smc import PID
 from trajectory_msgs.msg import MultiDOFJointTrajectory
 from first_order_filter import FirstOrderFilter
-from morus_msgs.msg import SMCStatus
+from morus_msgs.msg import SMCStatusAttitude
 from std_msgs.msg import Header
 from dynamic_reconfigure.server import Server
-from morus_control.cfg import SmcMmcuavPositionCtlParamsConfig
+from morus_control.cfg import SmcUavAttitudeCtlParamsConfig
 from nonlinear_blocks import deadzone, saturation
 from sensor_msgs.msg import Imu
 
@@ -55,6 +56,13 @@ class SmcAttitudeController:
             'imu',
             Imu,
             self.ahrs_cb)
+
+        # Status message publisher
+        self.status_pub = rospy.Publisher(
+            'smc_status_attitude',
+            SMCStatusAttitude,
+            queue_size=1)
+        self.status_msg = SMCStatusAttitude()
 
         self.euler_sp = Vector3(0., 0., 0.)
         self.euler_rate_sp = Vector3(0., 0., 0.)
@@ -124,23 +132,91 @@ class SmcAttitudeController:
         self.pitch_beta = 0.01
         self.pitch_rate_beta = 0.01
 
+        self.config_start = False
+        self.cfg_server = Server(SmcUavAttitudeCtlParamsConfig, self.cfg_callback)
+
+    def cfg_callback(self, config, level):
+
+        if not self.config_start:
+            self.config_start = True
+
+            config.kp = self.pid_roll.get_kp()
+            config.ki = self.pid_roll.get_ki()
+            config.kd = self.pid_roll.get_kd()
+
+            config.rate_kp = self.pid_roll_rate.get_kp()
+            config.rate_ki = self.pid_roll_rate.get_ki()
+            config.rate_kd = self.pid_roll_rate.get_kd()
+
+            config.lambd = self.lambda_roll
+            config.comp_gain = self.roll_compensator_gain
+
+            config.rate_lambda = self.lambda_roll_rate
+            config.rate_comp_gain = self.roll_rate_compensator_gain
+
+            config.switch_eps = self.eps
+            config.beta = self.roll_beta
+            config.rate_beta = self.roll_rate_beta
+
+            config.ff = self.roll_feed_forward_gain
+            config.rate_ff = self.roll_rate_feed_forward_gain
+
+        else:
+
+            self.pid_roll.set_kp(config.kp)
+            self.pid_roll.set_ki(config.ki)
+            self.pid_roll.set_kd(config.kd)
+
+            self.pid_pitch.set_kp(config.kp)
+            self.pid_pitch.set_ki(config.ki)
+            self.pid_pitch.set_kd(config.kd)
+
+            self.pid_roll_rate.set_kp(config.rate_kp)
+            self.pid_roll_rate.set_ki(config.rate_ki)
+            self.pid_roll_rate.set_kd(config.rate_kd)
+
+            self.pid_pitch_rate.set_kp(config.rate_kp)
+            self.pid_pitch_rate.set_ki(config.rate_ki)
+            self.pid_pitch_rate.set_kd(config.rate_kd)
+
+            self.roll_compensator_gain = config.comp_gain
+            self.pid_compensator_roll.set_kp(2 * config.lambd)
+            self.pid_compensator_roll.set_ki(config.lambd ** 2)
+            # self.pid_compensator_z.set_kd(config.z_comp_kd)
+
+            self.pitch_compensator_gain = config.comp_gain
+            self.pid_compensator_pitch.set_kp(2 * config.lambd)
+            self.pid_compensator_pitch.set_ki(config.lambd ** 2)
+            # self.pid_compensator_z.set_kd(config.z_comp_kd)
+
+            self.roll_rate_compensator_gain = config.rate_comp_gain
+            self.pid_compensator_roll_rate.set_kp(2 * config.rate_lambda)
+            self.pid_compensator_roll_rate.set_ki(config.rate_lambda ** 2)
+            # self.pid_compensator_z.set_kd(config.z_comp_kd)
+
+            self.pitch_rate_compensator_gain = config.rate_comp_gain
+            self.pid_compensator_pitch_rate.set_kp(2 * config.rate_lambda)
+            self.pid_compensator_pitch_rate.set_ki(config.rate_lambda ** 2)
+            # self.pid_compensator_z.set_kd(config.z_comp_kd)
+
+            self.eps = config.switch_eps
+            self.roll_beta = config.beta
+            self.roll_rate_beta = config.rate_beta
+
+            self.pitch_beta = config.beta
+            self.pitch_rate_beta = config.rate_beta
+
+            self.roll_feed_forward_gain = config.ff
+            self.roll_rate_feed_forward_gain = config.rate_ff
+
+            self.pitch_feed_forward_gain = config.ff
+            self.pitch_rate_feed_forward_gain = config.rate_ff
+
+        return config
+
     def angle_cb(self, data):
 
         self.euler_sp = Vector3(data.x, data.y, data.z)
-
-    def odometry_callback(self, data):
-        """Callback function for odometry subscriber"""
-
-        self.first_measurement = True
-
-        self.p = data.twist.twist.angular.x
-        self.q = data.twist.twist.angular.y
-        self.r = data.twist.twist.angular.z
-
-        self.qx = data.pose.pose.orientation.x
-        self.qy = data.pose.pose.orientation.y
-        self.qz = data.pose.pose.orientation.z
-        self.qw = data.pose.pose.orientation.w
 
     def ahrs_cb(self, msg):
 
@@ -171,7 +247,6 @@ class SmcAttitudeController:
         self.euler_rate_mv.x = p + sx * ty * q + cx * ty * r
         self.euler_rate_mv.y = cx * q - sx * r
         self.euler_rate_mv.z = sx / cy * q + cx / cy * r
-
 
     def run(self):
         """ Run ROS node - computes SMC algorithm for z and vz control """
@@ -211,6 +286,22 @@ class SmcAttitudeController:
             pitch_rate_error = self.euler_rate_sp.y - self.euler_rate_mv.y
             mass_pitch_offset = self.calculate_mass_offset_pitch(dt,pitch_rate_error)
 
+            # Update status message
+            head = Header()
+            head.stamp = rospy.Time.now()
+            self.status_msg.header = head
+            self.status_msg.roll_offset = mass_roll_offset
+            self.status_msg.pitch_offset = mass_pitch_offset
+            self.status_msg.roll_sp = self.euler_sp.x
+            self.status_msg.roll_mv = self.euler_mv.x
+            self.status_msg.pitch_sp = self.euler_sp.y
+            self.status_msg.pitch_mv = self.euler_mv.y
+            self.status_msg.roll_rate_sp = self.euler_rate_sp.x
+            self.status_msg.roll_rate_mv = self.euler_rate_mv.x
+            self.status_msg.pitch_rate_sp = self.euler_rate_sp.y
+            self.status_msg.pitch_rate_mv = self.euler_rate_mv.y
+            self.status_pub.publish(self.status_msg)
+
             self.mass0_command_msg.data = mass_pitch_offset
             self.mass1_command_msg.data = -mass_roll_offset
             self.mass2_command_msg.data = -mass_pitch_offset
@@ -228,6 +319,12 @@ class SmcAttitudeController:
         roll_ff_term = self.roll_feed_forward_gain * self.roll_feed_forward_filter.compute(self.euler_sp.x)
         roll_ff_term = saturation(roll_ff_term, self.roll_rate_min, self.roll_rate_max)
 
+        # Update status message
+        self.status_msg.roll_pid = roll_pid_output
+        self.status_msg.roll_comp = roll_compensator_term
+        self.status_msg.roll_switch = roll_switch_term
+        self.status_msg.roll_ff = roll_ff_term
+
         roll_rate_sp = \
             roll_pid_output  # + \
         # self.roll_compensator_gain * roll_compensator_term + \
@@ -242,6 +339,12 @@ class SmcAttitudeController:
         pitch_switch_term = self.pitch_beta * math.tanh(pitch_compensator_term / self.eps)
         pitch_ff_term = self.pitch_feed_forward_gain * self.pitch_feed_forward_filter.compute(self.euler_sp.y)
         pitch_ff_term = saturation(pitch_ff_term, self.pitch_rate_min, self.pitch_rate_max)
+
+        # Update status message
+        self.status_msg.pitch_pid = pitch_pid_output
+        self.status_msg.pitch_comp = pitch_compensator_term
+        self.status_msg.pitch_switch = pitch_switch_term
+        self.status_msg.pitch_ff = pitch_ff_term
 
         pitch_rate_sp = \
             pitch_pid_output  # + \
@@ -258,6 +361,12 @@ class SmcAttitudeController:
         roll_rate_ff_term = self.roll_rate_feed_forward_gain * self.roll_rate_feed_forward_filter.compute(
             self.euler_rate_sp.x)
 
+        # Update status message
+        self.status_msg.roll_rate_pid = pid_roll_rate_term
+        self.status_msg.roll_rate_comp = pid_comp_roll_rate
+        self.status_msg.roll_rate_switch = pid_switch_roll_rate
+        self.status_msg.roll_rate_ff = roll_rate_ff_term
+
         roll_offset = \
             pid_roll_rate_term #+ \
             #self.roll_rate_compensator_gain * pid_comp_roll_rate + \
@@ -272,6 +381,12 @@ class SmcAttitudeController:
         pid_switch_pitch_rate = self.pitch_rate_beta * math.tanh(pid_comp_pitch_rate/self.eps)
         pitch_rate_ff_term = self.pitch_rate_feed_forward_gain * self.pitch_rate_feed_forward_filter.compute(
             self.euler_rate_sp.y)
+
+        # Update status message
+        self.status_msg.pitch_rate_pid = pid_pitch_rate_term
+        self.status_msg.pitch_rate_comp = pid_comp_pitch_rate
+        self.status_msg.pitch_rate_switch = pid_switch_pitch_rate
+        self.status_msg.pitch_rate_ff = pitch_rate_ff_term
 
         pitch_offset = \
             pid_pitch_rate_term #+ \
