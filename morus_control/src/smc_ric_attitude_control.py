@@ -86,7 +86,7 @@ class SmcAttitudeController:
         # Roll rate compensator
         self.lambda_roll_rate = 0.8
         self.pid_compensator_roll_rate = PID(2 * self.lambda_roll_rate, self.lambda_roll_rate ** 2, 1)
-        self.roll_rate_compensator_gain = 0.5
+        self.roll_rate_compensator_gain = 0.1 #0.5
 
         # Pitch compensator
         self.lambda_pitch = 0.5
@@ -96,7 +96,7 @@ class SmcAttitudeController:
         # Pitch rate compensator
         self.lambda_pitch_rate = 0.8
         self.pid_compensator_pitch_rate = PID(2 * self.lambda_pitch_rate, self.lambda_pitch_rate ** 2, 1)
-        self.pitch_rate_compensator_gain = 0.5
+        self.pitch_rate_compensator_gain = 0.1 #0.5
 
         # Define feed forward roll reference filter
         self.roll_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
@@ -104,7 +104,7 @@ class SmcAttitudeController:
 
         # Define feed forward roll rate reference filter
         self.roll_rate_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.roll_rate_feed_forward_gain = 0.5
+        self.roll_rate_feed_forward_gain = 0.05 #0.5
 
         # Define feed forward roll reference filter
         self.pitch_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
@@ -112,8 +112,9 @@ class SmcAttitudeController:
 
         # Define feed forward roll rate reference filter
         self.pitch_rate_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.pitch_rate_feed_forward_gain = 0.5
-
+        self.pitch_rate_feed_forward_gain = 0.05 #0.5
+        
+        # Saturation values
         self.pitch_acc_min = -100
         self.pitch_acc_max = 100
 
@@ -125,12 +126,15 @@ class SmcAttitudeController:
 
         self.pitch_rate_min = -0.3
         self.pitch_rate_max = 0.3
+                
+        self.mass_offset_max = 0.3
+        self.mass_offset_min = -0.3
 
         self.eps = 0.01
         self.roll_beta = 0.01
-        self.roll_rate_beta = 0.01
+        self.roll_rate_beta = 0.001
         self.pitch_beta = 0.01
-        self.pitch_rate_beta = 0.01
+        self.pitch_rate_beta = 0.001
 
         self.config_start = False
         self.cfg_server = Server(SmcUavAttitudeCtlParamsConfig, self.cfg_callback)
@@ -277,7 +281,8 @@ class SmcAttitudeController:
             # ROLL RATE BLOCK
             roll_rate_error = self.euler_rate_sp.x - self.euler_rate_mv.x
             mass_roll_offset = self.calculate_mass_offset_roll(dt,roll_rate_error)
-
+            mass_roll_offset = saturation(mass_roll_offset, self.mass_offset_min, self.mass_offset_max)
+            
             # PITCH BLOCK
             pitch_error = self.euler_sp.y - self.euler_mv.y
             self.euler_rate_sp.y = self.calculate_pitch_rate_ref(dt, pitch_error)
@@ -285,6 +290,7 @@ class SmcAttitudeController:
             # PITCH RATE BLOCK
             pitch_rate_error = self.euler_rate_sp.y - self.euler_rate_mv.y
             mass_pitch_offset = self.calculate_mass_offset_pitch(dt,pitch_rate_error)
+            mass_pitch_offset = saturation(mass_pitch_offset, self.mass_offset_min, self.mass_offset_max)
 
             # Update status message
             head = Header()
@@ -326,10 +332,10 @@ class SmcAttitudeController:
         self.status_msg.roll_ff = roll_ff_term
 
         roll_rate_sp = \
-            roll_pid_output  # + \
-        # self.roll_compensator_gain * roll_compensator_term + \
-        # roll_switch_term + \
-        # roll_ff_term
+            roll_pid_output + \
+            self.roll_compensator_gain * roll_compensator_term + \
+            roll_switch_term + \
+            roll_ff_term
 
         return roll_rate_sp
 
@@ -347,17 +353,17 @@ class SmcAttitudeController:
         self.status_msg.pitch_ff = pitch_ff_term
 
         pitch_rate_sp = \
-            pitch_pid_output  # + \
-        # self.pitch_compensator_gain * pitch_compensator_term + \
-        # pitch_switch_term + \
-        # pitch_ff_term
+            pitch_pid_output + \
+            self.pitch_compensator_gain * pitch_compensator_term + \
+            pitch_switch_term + \
+            pitch_ff_term
 
         return pitch_rate_sp
 
     def calculate_mass_offset_roll(self, dt, roll_rate_error):
         pid_roll_rate_term = self.pid_roll_rate.compute(roll_rate_error,dt)
         pid_comp_roll_rate = self.pid_compensator_roll_rate.compute(roll_rate_error,dt)
-        pid_switch_roll_rate = self.roll_rate_beta * math.tanh(pid_comp_roll_rate/self.eps)
+        pid_switch_roll_rate = self.roll_rate_beta * math.tanh(pid_comp_roll_rate / self.eps) #math.tanh(deadzone(pid_comp_roll_rate / self.eps, -0.0001, 0.0001))
         roll_rate_ff_term = self.roll_rate_feed_forward_gain * self.roll_rate_feed_forward_filter.compute(
             self.euler_rate_sp.x)
 
@@ -368,17 +374,17 @@ class SmcAttitudeController:
         self.status_msg.roll_rate_ff = roll_rate_ff_term
 
         roll_offset = \
-            pid_roll_rate_term #+ \
-            #self.roll_rate_compensator_gain * pid_comp_roll_rate + \
-            #pid_switch_roll_rate + \
-            #roll_rate_ff_term
+            pid_roll_rate_term + \
+            self.roll_rate_compensator_gain * pid_comp_roll_rate + \
+            pid_switch_roll_rate + \
+            roll_rate_ff_term
 
         return roll_offset
 
     def calculate_mass_offset_pitch(self, dt, pitch_rate_error):
         pid_pitch_rate_term = self.pid_pitch_rate.compute(pitch_rate_error,dt)
         pid_comp_pitch_rate = self.pid_compensator_pitch_rate.compute(pitch_rate_error,dt)
-        pid_switch_pitch_rate = self.pitch_rate_beta * math.tanh(pid_comp_pitch_rate/self.eps)
+        pid_switch_pitch_rate = self.pitch_rate_beta * math.tanh(pid_comp_pitch_rate / self.eps) #math.tanh(deadzone(pid_comp_pitch_rate / self.eps, -0.0001, 0.0001))
         pitch_rate_ff_term = self.pitch_rate_feed_forward_gain * self.pitch_rate_feed_forward_filter.compute(
             self.euler_rate_sp.y)
 
@@ -389,10 +395,10 @@ class SmcAttitudeController:
         self.status_msg.pitch_rate_ff = pitch_rate_ff_term
 
         pitch_offset = \
-            pid_pitch_rate_term #+ \
-            #self.pitch_rate_compensator_gain * pid_comp_pitch_rate + \
-            #pid_switch_pitch_rate + \
-            #pitch_rate_ff_term
+            pid_pitch_rate_term + \
+            self.pitch_rate_compensator_gain * pid_comp_pitch_rate + \
+            pid_switch_pitch_rate + \
+            pitch_rate_ff_term
 
         return pitch_offset
 

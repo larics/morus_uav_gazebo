@@ -50,7 +50,7 @@ class SmcHeightController:
             queue_size=1)
         self.status_msg = SMCStatusHeight()
 
-        self.pose_sp = Vector3(0., 0., 0.62)
+        self.pose_sp = Vector3(0., 0., 1)
         self.vel_sp = Vector3(0., 0., 0.)
         self.t_old = 0
 
@@ -66,7 +66,11 @@ class SmcHeightController:
 
         # VZ PID Control
         self.pid_vz = PID(40, 0.1, 0)
-
+        
+        # Yaw PID Control
+        self.pid_yaw = PID(1, 0, 0)
+        self.pid_yaw_rate = PID(1, 0, 0)
+        
         # Z compensator
         self.lambda_z = 0.1
         self.pid_compensator_z = PID(2 * self.lambda_z, self.lambda_z ** 2, 1)
@@ -76,12 +80,25 @@ class SmcHeightController:
         self.lambda_vz = 2
         self.pid_compensator_vz = PID(2 * self.lambda_vz, self.lambda_vz ** 2, 0)
         self.vz_compensator_gain = 35 #100
-
+        
+        # Yaw compensator
+        self.lambda_yaw = 0.1
+        self.pid_compensator_yaw = PID(2 * self.lambda_yaw, self.lambda_yaw ** 2, 1)
+        self.yaw_compensator_gain = 1
+        
+        # Yaw rate compensator
+        self.lambda_yaw_rate = 0.1
+        self.pid_compensator_yaw = PID(2 * self.lambda_yaw_rate, self.lambda_yaw_rate ** 2, 0)
+        self.yaw_rate_compensator_gain = 1
+        
         # Define switch function constants
         self.eps = 0.01
         self.z_pos_beta = 0.01
         self.vz_beta = 50 # 180
-
+        
+        self.yaw_beta = 0.01
+        self.yaw_rate_beta = 50 # 180
+        
         # Define feed forward z position reference filter
         self.z_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
         self.z_feed_forward_gain = 0.1
@@ -89,7 +106,15 @@ class SmcHeightController:
         # Define feed forward z velocity reference filter
         self.vz_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
         self.vz_feed_forward_gain = 0.5
-
+    
+        # Yaw feed forward
+        self.yaw_feed_forward_filter = FirstOrderFillter(100, -100, 0.9048)
+        self.yaw_feed_forward_gain = 0.1
+        
+        # Yaw rate feed forward
+        self.yaw_rate_feed_forward_filter = FirstOrderFillter(100, -100, 0.9048)
+        self.yaw_rate_feed_forward_gain = 0.1
+        
         # Define saturation limits
         self.vz_ref_min = -5
         self.vz_ref_max = 5
@@ -270,7 +295,7 @@ class SmcHeightController:
             z_pid_output + \
             z_pos_switch_output + \
             self.z_compensator_gain * z_error_compensator_term #+ \
-            # z_ref_ff_term
+            #z_ref_ff_term
 
         return vel_ref
 
