@@ -85,7 +85,7 @@ class SmcHeightController:
         self.pid_vz = PID(40, 0.1, 0)
         
         # Yaw PID Control
-        self.pid_yaw = PID(1, 0, 0)
+        self.pid_yaw = PID(4, 0, 7)
         self.pid_yaw_rate = PID(100, 0, 0)
         
         # Z compensator
@@ -345,10 +345,12 @@ class SmcHeightController:
             # YAW BLOCK
             yaw_error = self.euler_sp.z - self.euler_mv.z
             self.euler_rate_sp.z = self.calculate_yaw_rate_ref(dt, yaw_error)
+            self.euler_rate_sp.z = saturation(self.euler_rate_sp.z, -0.5, 0.5)
 
             # YAW RATE BLOCK
             yaw_rate_error = self.euler_rate_sp.z - self.euler_rate_mv.z
             yaw_rotor_velocity = self.calculate_yaw_rotor_velocity(dt, yaw_rate_error)
+            yaw_rotor_velocity = saturation(yaw_rotor_velocity, -200, 200)
 
             # Construct rotor velocity message
             self.motor_vel_msg.angular_velocities = \
