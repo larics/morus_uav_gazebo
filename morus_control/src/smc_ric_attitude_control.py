@@ -72,46 +72,48 @@ class SmcAttitudeController:
 
         # Roll PID control
         self.pid_roll = PID(3, 1, 0)
-        self.pid_roll_rate =PID(2.5, 0, 0)
+        self.pid_roll_rate =PID(1.5, 0, 0)
 
         # Pitch PID control
         self.pid_pitch = PID(3, 1, 0)
-        self.pid_pitch_rate = PID(2.5, 0, 0)
+        self.pid_pitch_rate = PID(1.5, 0, 0)
 
         # Roll compensator
         self.lambda_roll = 0.5
-        self.pid_compensator_roll = PID(2 * self.lambda_roll, self.lambda_roll ** 2, 1)
+        self.pid_compensator_roll = PID(2 * self.lambda_roll, self.lambda_roll ** 2, 0.5)
         self.roll_compensator_gain = 0.05
 
         # Roll rate compensator
         self.lambda_roll_rate = 0.8
-        self.pid_compensator_roll_rate = PID(2 * self.lambda_roll_rate, self.lambda_roll_rate ** 2, 1)
-        self.roll_rate_compensator_gain = 0.1 #0.5
+        self.pid_compensator_roll_rate = PID(2 * self.lambda_roll_rate, self.lambda_roll_rate ** 2, 0.5)
+        self.roll_rate_compensator_gain = 0.003 #0.5
 
         # Pitch compensator
         self.lambda_pitch = 0.5
-        self.pid_compensator_pitch = PID(2 * self.lambda_pitch, self.lambda_pitch ** 2, 1)
+        self.pid_compensator_pitch = PID(2 * self.lambda_pitch, self.lambda_pitch ** 2, 0.5)
         self.pitch_compensator_gain = 0.05
 
         # Pitch rate compensator
         self.lambda_pitch_rate = 0.8
-        self.pid_compensator_pitch_rate = PID(2 * self.lambda_pitch_rate, self.lambda_pitch_rate ** 2, 1)
-        self.pitch_rate_compensator_gain = 0.1 #0.5
+        self.pid_compensator_pitch_rate = PID(2 * self.lambda_pitch_rate, self.lambda_pitch_rate ** 2, 0.5)
+        self.pitch_rate_compensator_gain = 0.003 #0.5
 
+        N = 100
+        Ts = 1.0 / self.controller_rate
         # Define feed forward roll reference filter
-        self.roll_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048) #FirstOrderFilter(100, -100, 0.9048)
+        self.roll_feed_forward_filter = FirstOrderFilter(2 * N, - 2 * N, (2 - N * Ts) / (N * Ts + 2))
         self.roll_feed_forward_gain = 0
 
         # Define feed forward roll rate reference filter
-        self.roll_rate_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.roll_rate_feed_forward_gain = 0.0 #0.5
+        self.roll_rate_feed_forward_filter = FirstOrderFilter(2 * N, - 2 * N, (2 - N * Ts) / (N * Ts + 2))
+        self.roll_rate_feed_forward_gain = 0.0 # 0.5
 
         # Define feed forward roll reference filter
-        self.pitch_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
+        self.pitch_feed_forward_filter = FirstOrderFilter(2 * N, - 2 * N, (2 - N * Ts) / (N * Ts + 2))
         self.pitch_feed_forward_gain = 0
 
         # Define feed forward roll rate reference filter
-        self.pitch_rate_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
+        self.pitch_rate_feed_forward_filter = FirstOrderFilter(2 * N, - 2 * N, (2 - N * Ts) / (N * Ts + 2))
         self.pitch_rate_feed_forward_gain = 0.0 #0.5
         
         # Saturation values
@@ -132,9 +134,9 @@ class SmcAttitudeController:
 
         self.eps = 0.01
         self.roll_beta = 0.01
-        self.roll_rate_beta = 0.001
+        self.roll_rate_beta = 0.01
         self.pitch_beta = 0.01
-        self.pitch_rate_beta = 0.001
+        self.pitch_rate_beta = 0.01
 
         self.config_start = False
         self.cfg_server = Server(SmcUavAttitudeCtlParamsConfig, self.cfg_callback)
@@ -362,9 +364,9 @@ class SmcAttitudeController:
 
     def calculate_mass_offset_roll(self, dt, roll_rate_error):
         pid_roll_rate_term = self.pid_roll_rate.compute(roll_rate_error, dt)
-        pid_comp_roll_rate = self.pid_compensator_roll_rate.compute(
-            deadzone(roll_rate_error, -0.01, 0.01), dt)
-        pid_switch_roll_rate = self.roll_rate_beta * math.tanh(pid_comp_roll_rate / self.eps) #math.tanh(deadzone(pid_comp_roll_rate / self.eps, -0.0001, 0.0001))
+        pid_comp_roll_rate = self.pid_compensator_roll_rate.compute(roll_rate_error, dt)
+        #pid_comp_roll_rate = deadzone(pid_comp_roll_rate / self.eps, -self.roll_rate_beta, self.roll_rate_beta)
+        pid_switch_roll_rate = self.roll_rate_beta * math.tanh(pid_comp_roll_rate / self.eps)
         roll_rate_ff_term = self.roll_rate_feed_forward_gain * self.roll_rate_feed_forward_filter.compute(
             self.euler_rate_sp.x)
 
@@ -384,9 +386,9 @@ class SmcAttitudeController:
 
     def calculate_mass_offset_pitch(self, dt, pitch_rate_error):
         pid_pitch_rate_term = self.pid_pitch_rate.compute(pitch_rate_error,dt)
-        pid_comp_pitch_rate = self.pid_compensator_pitch_rate.compute(
-            deadzone(pitch_rate_error, -0.01, 0.01), dt)
-        pid_switch_pitch_rate = self.pitch_rate_beta * math.tanh(pid_comp_pitch_rate / self.eps) #math.tanh(deadzone(pid_comp_pitch_rate / self.eps, -0.0001, 0.0001))
+        pid_comp_pitch_rate = self.pid_compensator_pitch_rate.compute(pitch_rate_error, dt)
+        #pid_comp_pitch_rate = deadzone(pid_comp_pitch_rate,  -, self.pitch_rate_beta)
+        pid_switch_pitch_rate = self.pitch_rate_beta * math.tanh(pid_comp_pitch_rate / self.eps)
         pitch_rate_ff_term = self.pitch_rate_feed_forward_gain * self.pitch_rate_feed_forward_filter.compute(
             self.euler_rate_sp.y)
 

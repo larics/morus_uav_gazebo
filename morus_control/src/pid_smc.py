@@ -44,7 +44,9 @@ class PID:
         self.firstPass = True
 
         # ros message formed when create_msg method is called
-        self.real_derivative = FirstOrderFilter(100, -100, 0.9048)
+        N = 100
+        Ts = 1.0 / 100.0
+        self.real_derivative = FirstOrderFilter(2 * N, - 2 * N, (2 - N * Ts) / (N * Ts + 2))
 
     def reset(self):
         ''' Resets pid algorithm by setting all P,I,D parts to zero'''

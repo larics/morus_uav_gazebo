@@ -118,19 +118,19 @@ class SmcHeightController:
         
         # Define feed forward z position reference filter
         self.z_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.z_feed_forward_gain = 0.1
+        self.z_feed_forward_gain = 0.0
 
         # Define feed forward z velocity reference filter
         self.vz_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.vz_feed_forward_gain = 0.5
+        self.vz_feed_forward_gain = 0.0
     
         # Yaw feed forward
         self.yaw_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.yaw_feed_forward_gain = 0.1
+        self.yaw_feed_forward_gain = 0.0
         
         # Yaw rate feed forward
         self.yaw_rate_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.yaw_rate_feed_forward_gain = 0.1
+        self.yaw_rate_feed_forward_gain = 0.0
         
         # Define saturation limits
         self.vz_ref_min = -5
