@@ -93,14 +93,14 @@ class PositionControl:
         self.pid_vx.set_kp(0.1)
         self.pid_vx.set_ki(0.0)
         self.pid_vx.set_kd(0)
-        self.pid_vx.set_lim_high(0.2)
-        self.pid_vx.set_lim_low(-0.2)
+        self.pid_vx.set_lim_high(0.02)
+        self.pid_vx.set_lim_low(-0.02)
 
         self.pid_vy.set_kp(0.1)
         self.pid_vy.set_ki(0.0)
         self.pid_vy.set_kd(0)
-        self.pid_vy.set_lim_high(0.2)
-        self.pid_vy.set_lim_low(-0.2)
+        self.pid_vy.set_lim_high(0.02)
+        self.pid_vy.set_lim_low(-0.02)
 
         self.pid_x.set_kp(0.5)
         self.pid_x.set_ki(0.0)
@@ -168,7 +168,7 @@ class PositionControl:
         self.pub_pid_yaw = rospy.Publisher('pid_yaw', PIDController, queue_size=1)
         self.pub_pid_yaw_rate = rospy.Publisher('pid_yaw_rate', PIDController, queue_size=1)
         
-        self.euler_ref_pub = rospy.Publisher('euler_ref', Vector3, queue_size=1)
+        self.euler_ref_pub = rospy.Publisher('angle_ref', Vector3, queue_size=1)
         self.mot_ref_pub = rospy.Publisher('mot_vel_ref', Float32, queue_size=1)
         self.pub_mot = rospy.Publisher('/gazebo/command/motor_speed', Actuators, queue_size=1)
        
@@ -235,7 +235,7 @@ class PositionControl:
             mot_speed3 = self.mot_speed + self.yaw_command 
             mot_speed4 = self.mot_speed - self.yaw_command 
             mot_speed_msg.angular_velocities = [mot_speed1, mot_speed2, mot_speed3, mot_speed4]
-            self.pub_mot.publish(mot_speed_msg)
+            #self.pub_mot.publish(mot_speed_msg)
             
             vec3_msg = Vector3(roll_ref, pitch_ref, 0)
             self.euler_ref_pub.publish(vec3_msg)

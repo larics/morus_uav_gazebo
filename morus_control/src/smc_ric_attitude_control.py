@@ -99,20 +99,20 @@ class SmcAttitudeController:
         self.pitch_rate_compensator_gain = 0.1 #0.5
 
         # Define feed forward roll reference filter
-        self.roll_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.roll_feed_forward_gain = 0.1
+        self.roll_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048) #FirstOrderFilter(100, -100, 0.9048)
+        self.roll_feed_forward_gain = 0
 
         # Define feed forward roll rate reference filter
         self.roll_rate_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.roll_rate_feed_forward_gain = 0.05 #0.5
+        self.roll_rate_feed_forward_gain = 0.0 #0.5
 
         # Define feed forward roll reference filter
         self.pitch_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.pitch_feed_forward_gain = 0.1
+        self.pitch_feed_forward_gain = 0
 
         # Define feed forward roll rate reference filter
         self.pitch_rate_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
-        self.pitch_rate_feed_forward_gain = 0.05 #0.5
+        self.pitch_rate_feed_forward_gain = 0.0 #0.5
         
         # Saturation values
         self.pitch_acc_min = -100
@@ -320,14 +320,14 @@ class SmcAttitudeController:
 
     def calculate_roll_rate_ref(self, dt, roll_error):
         roll_pid_output = self.pid_roll.compute(roll_error, dt)
-        roll_compensator_term = self.pid_compensator_roll.compute(roll_error, dt)
+        roll_compensator_term = self.pid_compensator_roll.compute(roll_error , dt)
         roll_switch_term = self.roll_beta * math.tanh(roll_compensator_term / self.eps)
         roll_ff_term = self.roll_feed_forward_gain * self.roll_feed_forward_filter.compute(self.euler_sp.x)
         roll_ff_term = saturation(roll_ff_term, self.roll_rate_min, self.roll_rate_max)
 
         # Update status message
         self.status_msg.roll_pid = roll_pid_output
-        self.status_msg.roll_comp = roll_compensator_term
+        self.status_msg.roll_comp = self.roll_compensator_gain * roll_compensator_term
         self.status_msg.roll_switch = roll_switch_term
         self.status_msg.roll_ff = roll_ff_term
 
@@ -348,7 +348,7 @@ class SmcAttitudeController:
 
         # Update status message
         self.status_msg.pitch_pid = pitch_pid_output
-        self.status_msg.pitch_comp = pitch_compensator_term
+        self.status_msg.pitch_comp = self.pitch_compensator_gain * pitch_compensator_term
         self.status_msg.pitch_switch = pitch_switch_term
         self.status_msg.pitch_ff = pitch_ff_term
 
@@ -361,15 +361,16 @@ class SmcAttitudeController:
         return pitch_rate_sp
 
     def calculate_mass_offset_roll(self, dt, roll_rate_error):
-        pid_roll_rate_term = self.pid_roll_rate.compute(roll_rate_error,dt)
-        pid_comp_roll_rate = self.pid_compensator_roll_rate.compute(roll_rate_error,dt)
+        pid_roll_rate_term = self.pid_roll_rate.compute(roll_rate_error, dt)
+        pid_comp_roll_rate = self.pid_compensator_roll_rate.compute(
+            deadzone(roll_rate_error, -0.01, 0.01), dt)
         pid_switch_roll_rate = self.roll_rate_beta * math.tanh(pid_comp_roll_rate / self.eps) #math.tanh(deadzone(pid_comp_roll_rate / self.eps, -0.0001, 0.0001))
         roll_rate_ff_term = self.roll_rate_feed_forward_gain * self.roll_rate_feed_forward_filter.compute(
             self.euler_rate_sp.x)
 
         # Update status message
         self.status_msg.roll_rate_pid = pid_roll_rate_term
-        self.status_msg.roll_rate_comp = pid_comp_roll_rate
+        self.status_msg.roll_rate_comp = self.roll_rate_compensator_gain * pid_comp_roll_rate
         self.status_msg.roll_rate_switch = pid_switch_roll_rate
         self.status_msg.roll_rate_ff = roll_rate_ff_term
 
@@ -383,14 +384,15 @@ class SmcAttitudeController:
 
     def calculate_mass_offset_pitch(self, dt, pitch_rate_error):
         pid_pitch_rate_term = self.pid_pitch_rate.compute(pitch_rate_error,dt)
-        pid_comp_pitch_rate = self.pid_compensator_pitch_rate.compute(pitch_rate_error,dt)
+        pid_comp_pitch_rate = self.pid_compensator_pitch_rate.compute(
+            deadzone(pitch_rate_error, -0.01, 0.01), dt)
         pid_switch_pitch_rate = self.pitch_rate_beta * math.tanh(pid_comp_pitch_rate / self.eps) #math.tanh(deadzone(pid_comp_pitch_rate / self.eps, -0.0001, 0.0001))
         pitch_rate_ff_term = self.pitch_rate_feed_forward_gain * self.pitch_rate_feed_forward_filter.compute(
             self.euler_rate_sp.y)
 
         # Update status message
         self.status_msg.pitch_rate_pid = pid_pitch_rate_term
-        self.status_msg.pitch_rate_comp = pid_comp_pitch_rate
+        self.status_msg.pitch_rate_comp = self.pitch_rate_compensator_gain * pid_comp_pitch_rate
         self.status_msg.pitch_rate_switch = pid_switch_pitch_rate
         self.status_msg.pitch_rate_ff = pitch_rate_ff_term
 

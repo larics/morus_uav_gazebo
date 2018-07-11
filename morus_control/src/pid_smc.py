@@ -1,6 +1,6 @@
 from datetime import datetime
 import rospy
-
+from first_order_filter import FirstOrderFilter
 
 class PID:
     """
@@ -44,6 +44,7 @@ class PID:
         self.firstPass = True
 
         # ros message formed when create_msg method is called
+        self.real_derivative = FirstOrderFilter(100, -100, 0.9048)
 
     def reset(self):
         ''' Resets pid algorithm by setting all P,I,D parts to zero'''
@@ -131,7 +132,7 @@ class PID:
             else:
                 self.ui = self.ui_old + self.ki * error * dt    # integral term
 
-            self.ud = self.kd * de / dt                         # derivative term
+            self.ud = self.kd * self.real_derivative.compute(de) # derivative term
 
             self.u = self.up + self.ui + self.ud
 
