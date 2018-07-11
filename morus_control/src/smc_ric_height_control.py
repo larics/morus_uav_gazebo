@@ -85,8 +85,8 @@ class SmcHeightController:
         self.pid_vz = PID(40, 0.1, 0)
         
         # Yaw PID Control
-        self.pid_yaw = PID(4, 0, 7)
-        self.pid_yaw_rate = PID(100, 0, 0)
+        self.pid_yaw = PID(4, 0, 4)
+        self.pid_yaw_rate = PID(200, 0, 0) #PID(100, 0.005, 0)
         
         # Z compensator
         self.lambda_z = 0.1
@@ -101,12 +101,12 @@ class SmcHeightController:
         # Yaw compensator
         self.lambda_yaw = 0.1
         self.pid_compensator_yaw = PID(2 * self.lambda_yaw, self.lambda_yaw ** 2, 1)
-        self.yaw_compensator_gain = 1
+        self.yaw_compensator_gain = 0.1 #1
         
         # Yaw rate compensator
-        self.lambda_yaw_rate = 0.1
-        self.pid_compensator_yaw_rate = PID(2 * self.lambda_yaw_rate, self.lambda_yaw_rate ** 2, 0)
-        self.yaw_rate_compensator_gain = 1
+        self.lambda_yaw_rate = 1.5 #0.1
+        self.pid_compensator_yaw_rate = PID(200, 0, 0)#PID(2 * self.lambda_yaw_rate, self.lambda_yaw_rate ** 2, 0)
+        self.yaw_rate_compensator_gain = 0.02 #2
         
         # Define switch function constants
         self.eps = 0.01
@@ -114,7 +114,7 @@ class SmcHeightController:
         self.vz_beta = 50 # 180
         
         self.yaw_beta = 0.01
-        self.yaw_rate_beta = 50 # 180
+        self.yaw_rate_beta = 3 # 10
         
         # Define feed forward z position reference filter
         self.z_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
@@ -350,7 +350,7 @@ class SmcHeightController:
             # YAW RATE BLOCK
             yaw_rate_error = self.euler_rate_sp.z - self.euler_rate_mv.z
             yaw_rotor_velocity = self.calculate_yaw_rotor_velocity(dt, yaw_rate_error)
-            yaw_rotor_velocity = saturation(yaw_rotor_velocity, -200, 200)
+            yaw_rotor_velocity = saturation(yaw_rotor_velocity, -100, 100)
 
             # Construct rotor velocity message
             self.motor_vel_msg.angular_velocities = \
@@ -426,9 +426,9 @@ class SmcHeightController:
 
         yaw_rate_ref = \
             yaw_pid_term #+ \
-            # yaw_ff_term + \
-            # self.yaw_compensator_gain * yaw_compensator_term + \
-            # yaw_switch_term
+            #self.yaw_compensator_gain * yaw_compensator_term #+ \
+            #yaw_switch_term #+ \
+            #yaw_ff_term 
 
         return yaw_rate_ref
 
@@ -438,6 +438,7 @@ class SmcHeightController:
             self.euler_rate_sp.z)
         yaw_rate_compensator_term = self.pid_compensator_yaw_rate.compute(yaw_rate_error, dt)
         yaw_rate_switch_term = self.yaw_rate_beta * math.tan(yaw_rate_compensator_term / self.eps)
+            #deadzone(yaw_rate_compensator_term / self.eps, -0.001, 0.001))
 
         # Update status message
         self.status_msg.yaw_rate_comp = self.yaw_rate_compensator_gain * yaw_rate_compensator_term
@@ -446,10 +447,10 @@ class SmcHeightController:
         self.status_msg.yaw_rate_switch = yaw_rate_switch_term
 
         yaw_rotor_offset = \
-            yaw_rate_pid_term #+ \
-            # yaw_rate_ff_term + \
-            # self.yaw_rate_compensator_gain * yaw_rate_compensator_term + \
-            # yaw_rate_switch_term
+            yaw_rate_pid_term + \
+            self.yaw_rate_compensator_gain * yaw_rate_compensator_term #+ \
+            #yaw_rate_switch_term + \
+            #yaw_rate_ff_term
 
         return yaw_rotor_offset
 
