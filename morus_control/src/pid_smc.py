@@ -134,7 +134,7 @@ class PID:
             else:
                 self.ui = self.ui_old + self.ki * error * dt    # integral term
 
-            self.ud = self.kd * self.real_derivative.compute(de) # derivative term
+            self.ud = self.kd * de / dt # self.real_derivative.compute(de) # derivative term
 
             self.u = self.up + self.ui + self.ud
 

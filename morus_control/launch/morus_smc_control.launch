@@ -35,8 +35,8 @@
       <node pkg="morus_control" type="smc_ric_attitude_control.py" name="smc_attitude_control" output="screen"  ns="$(arg namespace)">
       </node>
 
-      <node pkg="morus_control" type="position_yaw_control.py" name="position_control" output="screen"  ns="$(arg namespace)">
-      </node>
+      <!-- node pkg="morus_control" type="position_yaw_control.py" name="position_control" output="screen"  ns="$(arg namespace)">
+      </node -->
 
       <!--node pkg="morus_control" type="mass_ctl_attitude.py" name="mass_ctl_attitude" output="screen"  ns="$(arg namespace)">
       </node-->

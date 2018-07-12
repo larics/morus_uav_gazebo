@@ -15,7 +15,7 @@ from morus_msgs.msg import SMCStatusAttitude
 from std_msgs.msg import Header
 from dynamic_reconfigure.server import Server
 from morus_control.cfg import SmcUavAttitudeCtlParamsConfig
-from nonlinear_blocks import deadzone, saturation
+from simple_filters import deadzone, saturation
 from sensor_msgs.msg import Imu
 
 
@@ -278,20 +278,20 @@ class SmcAttitudeController:
 
             # ROLL BLOCK
             roll_error = self.euler_sp.x - self.euler_mv.x
-            self.euler_rate_sp.x = self.calculate_roll_rate_ref(dt, roll_error)
+            self.euler_rate_sp.x = self.roll_outer_loop(dt, roll_error)
 
             # ROLL RATE BLOCK
             roll_rate_error = self.euler_rate_sp.x - self.euler_rate_mv.x
-            mass_roll_offset = self.calculate_mass_offset_roll(dt,roll_rate_error)
+            mass_roll_offset = self.roll_rate_inner_loop(dt, roll_rate_error)
             mass_roll_offset = saturation(mass_roll_offset, self.mass_offset_min, self.mass_offset_max)
             
             # PITCH BLOCK
             pitch_error = self.euler_sp.y - self.euler_mv.y
-            self.euler_rate_sp.y = self.calculate_pitch_rate_ref(dt, pitch_error)
+            self.euler_rate_sp.y = self.pitch_outer_loop(dt, pitch_error)
 
             # PITCH RATE BLOCK
             pitch_rate_error = self.euler_rate_sp.y - self.euler_rate_mv.y
-            mass_pitch_offset = self.calculate_mass_offset_pitch(dt,pitch_rate_error)
+            mass_pitch_offset = self.pitch_rate_inner_loop(dt, pitch_rate_error)
             mass_pitch_offset = saturation(mass_pitch_offset, self.mass_offset_min, self.mass_offset_max)
 
             # Update status message
@@ -320,7 +320,15 @@ class SmcAttitudeController:
             self.pub_mass2.publish(self.mass2_command_msg)
             self.pub_mass3.publish(self.mass3_command_msg)
 
-    def calculate_roll_rate_ref(self, dt, roll_error):
+    def roll_outer_loop(self, dt, roll_error):
+        """
+        Roll control outer loop.
+
+        :param dt:
+        :param roll_error:
+        :return: Roll rate reference.
+        """
+
         roll_pid_output = self.pid_roll.compute(roll_error, dt)
         roll_compensator_term = self.pid_compensator_roll.compute(roll_error , dt)
         roll_switch_term = self.roll_beta * math.tanh(roll_compensator_term / self.eps)
@@ -341,7 +349,15 @@ class SmcAttitudeController:
 
         return roll_rate_sp
 
-    def calculate_pitch_rate_ref(self, dt, pitch_error):
+    def pitch_outer_loop(self, dt, pitch_error):
+        """
+        Pitch control outer loop.
+
+        :param dt:
+        :param pitch_error:
+        :return: Pitch rate reference.
+        """
+
         pitch_pid_output = self.pid_pitch.compute(pitch_error, dt)
         pitch_compensator_term = self.pid_compensator_pitch.compute(pitch_error, dt)
         pitch_switch_term = self.pitch_beta * math.tanh(pitch_compensator_term / self.eps)
@@ -362,10 +378,14 @@ class SmcAttitudeController:
 
         return pitch_rate_sp
 
-    def calculate_mass_offset_roll(self, dt, roll_rate_error):
-        print(roll_rate_error)
-        roll_rate_error = deadzone(roll_rate_error, -0.01, 0.01)
-        print(roll_rate_error)
+    def roll_rate_inner_loop(self, dt, roll_rate_error):
+        """
+        Roll rate inner loop control.
+
+        :param dt:
+        :param roll_rate_error:
+        :return: Mass offset for given roll rate reference.
+        """
 
         pid_roll_rate_term = self.pid_roll_rate.compute(roll_rate_error, dt)
         pid_comp_roll_rate = self.pid_compensator_roll_rate.compute(roll_rate_error, dt)
@@ -388,8 +408,16 @@ class SmcAttitudeController:
 
         return roll_offset
 
-    def calculate_mass_offset_pitch(self, dt, pitch_rate_error):
-        pid_pitch_rate_term = self.pid_pitch_rate.compute(pitch_rate_error,dt)
+    def pitch_rate_inner_loop(self, dt, pitch_rate_error):
+        """
+        Pitch rate inner loop control.
+
+        :param dt:
+        :param pitch_rate_error:
+        :return: Mass offset for given pitch rate reference.
+        """
+
+        pid_pitch_rate_term = self.pid_pitch_rate.compute(pitch_rate_error, dt)
         pid_comp_pitch_rate = self.pid_compensator_pitch_rate.compute(pitch_rate_error, dt)
         # pid_comp_pitch_rate = deadzone(pid_comp_pitch_rate,  -, self.pitch_rate_beta)
         pid_switch_pitch_rate = self.pitch_rate_beta * math.tanh(pid_comp_pitch_rate / self.eps)
