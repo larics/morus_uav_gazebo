@@ -29,3 +29,11 @@ def ramp(previous_output, setpoint, Ts, K):
     if abs(delta) < K*Ts:
         return setpoint
     return K * Ts * signum(delta) + previous_output
+
+def saturation(value, lower_limit, high_limit):
+    if value > high_limit:
+        return high_limit
+    elif value < lower_limit:
+        return lower_limit
+    else:
+        return value
