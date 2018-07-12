@@ -71,32 +71,32 @@ class SmcAttitudeController:
         self.t_old = 0
 
         # Roll PID control
-        self.pid_roll = PID(3, 1, 0)
-        self.pid_roll_rate =PID(1.5, 0, 0)
+        self.pid_roll = PID(3, 0.5, 0)
+        self.pid_roll_rate =PID(2.5, 0, 0)
 
         # Pitch PID control
-        self.pid_pitch = PID(3, 1, 0)
-        self.pid_pitch_rate = PID(1.5, 0, 0)
+        self.pid_pitch = PID(3, 0.5, 0)
+        self.pid_pitch_rate = PID(2.5, 0, 0)
 
         # Roll compensator
         self.lambda_roll = 0.5
         self.pid_compensator_roll = PID(2 * self.lambda_roll, self.lambda_roll ** 2, 0.5)
-        self.roll_compensator_gain = 0.05
+        self.roll_compensator_gain = 0.1
 
         # Roll rate compensator
-        self.lambda_roll_rate = 0.8
+        self.lambda_roll_rate = 2
         self.pid_compensator_roll_rate = PID(2 * self.lambda_roll_rate, self.lambda_roll_rate ** 2, 0.5)
-        self.roll_rate_compensator_gain = 0.003 #0.5
+        self.roll_rate_compensator_gain = 0.1  #0.5
 
         # Pitch compensator
         self.lambda_pitch = 0.5
         self.pid_compensator_pitch = PID(2 * self.lambda_pitch, self.lambda_pitch ** 2, 0.5)
-        self.pitch_compensator_gain = 0.05
+        self.pitch_compensator_gain = 0.1
 
         # Pitch rate compensator
-        self.lambda_pitch_rate = 0.8
+        self.lambda_pitch_rate = 2
         self.pid_compensator_pitch_rate = PID(2 * self.lambda_pitch_rate, self.lambda_pitch_rate ** 2, 0.5)
-        self.pitch_rate_compensator_gain = 0.003 #0.5
+        self.pitch_rate_compensator_gain = 0.1  #0.5
 
         N = 100
         Ts = 1.0 / self.controller_rate
@@ -132,11 +132,13 @@ class SmcAttitudeController:
         self.mass_offset_max = 0.3
         self.mass_offset_min = -0.3
 
-        self.eps = 0.01
+        self.eps = 0.014
+        self.rate_eps = 0.2
+
         self.roll_beta = 0.01
-        self.roll_rate_beta = 0.01
+        self.roll_rate_beta = 0.06
         self.pitch_beta = 0.01
-        self.pitch_rate_beta = 0.01
+        self.pitch_rate_beta = 0.06
 
         self.config_start = False
         self.cfg_server = Server(SmcUavAttitudeCtlParamsConfig, self.cfg_callback)
@@ -160,7 +162,9 @@ class SmcAttitudeController:
             config.rate_lambda = self.lambda_roll_rate
             config.rate_comp_gain = self.roll_rate_compensator_gain
 
-            config.switch_eps = self.eps
+            config.eps = self.eps
+            config.rate_eps = self.rate_eps
+
             config.beta = self.roll_beta
             config.rate_beta = self.roll_rate_beta
 
@@ -205,7 +209,9 @@ class SmcAttitudeController:
             self.pid_compensator_pitch_rate.set_ki(config.rate_lambda ** 2)
             # self.pid_compensator_z.set_kd(config.z_comp_kd)
 
-            self.eps = config.switch_eps
+            self.eps = config.eps
+            self.rate_eps = config.rate_eps
+
             self.roll_beta = config.beta
             self.roll_rate_beta = config.rate_beta
 
@@ -390,7 +396,7 @@ class SmcAttitudeController:
         pid_roll_rate_term = self.pid_roll_rate.compute(roll_rate_error, dt)
         pid_comp_roll_rate = self.pid_compensator_roll_rate.compute(roll_rate_error, dt)
         # pid_comp_roll_rate = deadzone(pid_comp_roll_rate / self.eps, -self.roll_rate_beta, self.roll_rate_beta)
-        pid_switch_roll_rate = self.roll_rate_beta * math.tanh(pid_comp_roll_rate / self.eps)
+        pid_switch_roll_rate = self.roll_rate_beta * math.tanh(pid_comp_roll_rate / self.rate_eps)
         roll_rate_ff_term = self.roll_rate_feed_forward_gain * self.roll_rate_feed_forward_filter.compute(
             self.euler_rate_sp.x)
 
@@ -420,7 +426,7 @@ class SmcAttitudeController:
         pid_pitch_rate_term = self.pid_pitch_rate.compute(pitch_rate_error, dt)
         pid_comp_pitch_rate = self.pid_compensator_pitch_rate.compute(pitch_rate_error, dt)
         # pid_comp_pitch_rate = deadzone(pid_comp_pitch_rate,  -, self.pitch_rate_beta)
-        pid_switch_pitch_rate = self.pitch_rate_beta * math.tanh(pid_comp_pitch_rate / self.eps)
+        pid_switch_pitch_rate = self.pitch_rate_beta * math.tanh(pid_comp_pitch_rate / self.rate_eps)
         pitch_rate_ff_term = self.pitch_rate_feed_forward_gain * self.pitch_rate_feed_forward_filter.compute(
             self.euler_rate_sp.y)
 

@@ -79,7 +79,7 @@ class SmcHeightController:
         self.controller_ts = 1.0 / self.controller_rate
 
         # Z PID Control
-        self.pid_z = PID(1.5, 0, 0.1)
+        self.pid_z = PID(1.5, 0.25, 0.0)
 
         # VZ PID Control
         self.pid_vz = PID(40, 0.1, 0)
@@ -89,7 +89,7 @@ class SmcHeightController:
         self.pid_yaw_rate = PID(200, 0, 0) #PID(100, 0.005, 0)
         
         # Z compensator
-        self.lambda_z = 0.5
+        self.lambda_z = 0.15
         self.pid_compensator_z = PID(2 * self.lambda_z, self.lambda_z ** 2, 1)
         self.z_compensator_gain = 0.1
         
@@ -109,12 +109,12 @@ class SmcHeightController:
         self.yaw_rate_compensator_gain = 0.02 #2
         
         # Define switch function constants
-        self.z_eps = 0.01
+        self.z_eps = 0.5
         self.vz_eps = 0.5
         self.yaw_eps = 0.01
         self.yaw_rate_eps = 0.01
 
-        self.z_pos_beta = 0.01
+        self.z_pos_beta = 0.1
         self.vz_beta = 60 # 180
         
         self.yaw_beta = 0.01
@@ -137,7 +137,7 @@ class SmcHeightController:
         self.yaw_rate_feed_forward_gain = 0.0
         
         # Define saturation limits
-        self.vz_ref_min = -5
+        self.vz_ref_min = - 5
         self.vz_ref_max = 5
 
         self.rotor_vel_min = -400
@@ -406,7 +406,6 @@ class SmcHeightController:
         z_pid_output = self.pid_z.compute(z_error, dt)
 
         # Calculate z position error compensator output
-        z_error = self.pose_sp.z - self.z_mv
         z_error_compensator_term = self.pid_compensator_z.compute(z_error, dt)
 
         # Calculate z position switch function output
