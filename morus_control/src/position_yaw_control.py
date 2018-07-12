@@ -169,6 +169,7 @@ class PositionControl:
         self.pub_pid_yaw_rate = rospy.Publisher('pid_yaw_rate', PIDController, queue_size=1)
         
         self.euler_ref_pub = rospy.Publisher('angle_ref', Vector3, queue_size=1)
+
         self.mot_ref_pub = rospy.Publisher('mot_vel_ref', Float32, queue_size=1)
         self.pub_mot = rospy.Publisher('/gazebo/command/motor_speed', Actuators, queue_size=1)
        

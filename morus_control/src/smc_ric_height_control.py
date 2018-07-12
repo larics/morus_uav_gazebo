@@ -99,26 +99,26 @@ class SmcHeightController:
         self.vz_compensator_gain = 50 #100
         
         # Yaw compensator
-        self.lambda_yaw = 0.1
+        self.lambda_yaw = 0.8
         self.pid_compensator_yaw = PID(2 * self.lambda_yaw, self.lambda_yaw ** 2, 1)
-        self.yaw_compensator_gain = 0.1 #1
+        self.yaw_compensator_gain = 1.5 #1
         
         # Yaw rate compensator
         self.lambda_yaw_rate = 1.5 #0.1
-        self.pid_compensator_yaw_rate = PID(2 * self.lambda_yaw_rate, self.lambda_yaw_rate ** 2, 0)
-        self.yaw_rate_compensator_gain = 0.02 #2
+        self.pid_compensator_yaw_rate = PID(2 * self.lambda_yaw_rate, self.lambda_yaw_rate ** 2, 0.001)
+        self.yaw_rate_compensator_gain = 1.5 #2
         
         # Define switch function constants
         self.z_eps = 0.5
         self.vz_eps = 0.5
         self.yaw_eps = 0.01
-        self.yaw_rate_eps = 0.01
+        self.yaw_rate_eps = 0.1
 
         self.z_pos_beta = 0.1
         self.vz_beta = 60 # 180
         
         self.yaw_beta = 0.01
-        self.yaw_rate_beta = 3 # 10
+        self.yaw_rate_beta = 2.5 # 10
         
         # Define feed forward z position reference filter
         self.z_feed_forward_filter = FirstOrderFilter(100, -100, 0.9048)
@@ -367,10 +367,10 @@ class SmcHeightController:
             # Construct rotor velocity message
             self.motor_vel_msg.angular_velocities = \
                 [
-                    self.hover_speed + rotor_velocity, # + yaw_rotor_velocity,
-                    self.hover_speed + rotor_velocity, # - yaw_rotor_velocity,
-                    self.hover_speed + rotor_velocity, # + yaw_rotor_velocity,
-                    self.hover_speed + rotor_velocity  # - yaw_rotor_velocity
+                    self.hover_speed + rotor_velocity + yaw_rotor_velocity,
+                    self.hover_speed + rotor_velocity - yaw_rotor_velocity,
+                    self.hover_speed + rotor_velocity + yaw_rotor_velocity,
+                    self.hover_speed + rotor_velocity - yaw_rotor_velocity
                 ]
             self.motor_pub.publish(self.motor_vel_msg)
 
@@ -449,9 +449,9 @@ class SmcHeightController:
         self.status_msg.yaw_switch = yaw_switch_term
 
         yaw_rate_ref = \
-            yaw_pid_term #+ \
-            #self.yaw_compensator_gain * yaw_compensator_term #+ \
-            #yaw_switch_term #+ \
+            yaw_pid_term + \
+            self.yaw_compensator_gain * yaw_compensator_term + \
+            yaw_switch_term #+ \
             #yaw_ff_term 
 
         return yaw_rate_ref
@@ -480,8 +480,8 @@ class SmcHeightController:
 
         yaw_rotor_offset = \
             yaw_rate_pid_term + \
-            self.yaw_rate_compensator_gain * yaw_rate_compensator_term #+ \
-            #yaw_rate_switch_term + \
+            self.yaw_rate_compensator_gain * yaw_rate_compensator_term + \
+            yaw_rate_switch_term #+ \
             #yaw_rate_ff_term
 
         return yaw_rotor_offset

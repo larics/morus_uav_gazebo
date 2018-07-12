@@ -80,7 +80,7 @@ class SmcAttitudeController:
 
         # Roll compensator
         self.lambda_roll = 0.5
-        self.pid_compensator_roll = PID(2 * self.lambda_roll, self.lambda_roll ** 2, 0.5)
+        self.pid_compensator_roll = PID(2 * self.lambda_roll, self.lambda_roll ** 2, 0.0) # 0.5
         self.roll_compensator_gain = 0.1
 
         # Roll rate compensator
@@ -90,7 +90,7 @@ class SmcAttitudeController:
 
         # Pitch compensator
         self.lambda_pitch = 0.5
-        self.pid_compensator_pitch = PID(2 * self.lambda_pitch, self.lambda_pitch ** 2, 0.5)
+        self.pid_compensator_pitch = PID(2 * self.lambda_pitch, self.lambda_pitch ** 2, 0.0) # 0.5
         self.pitch_compensator_gain = 0.1
 
         # Pitch rate compensator
@@ -335,6 +335,7 @@ class SmcAttitudeController:
         :return: Roll rate reference.
         """
 
+        roll_error = deadzone(roll_error, - 0.002, 0.002)
         roll_pid_output = self.pid_roll.compute(roll_error, dt)
         roll_compensator_term = self.pid_compensator_roll.compute(roll_error , dt)
         roll_switch_term = self.roll_beta * math.tanh(roll_compensator_term / self.eps)
@@ -363,7 +364,7 @@ class SmcAttitudeController:
         :param pitch_error:
         :return: Pitch rate reference.
         """
-
+        pitch_error = deadzone(pitch_error, - 0.002, 0.002)
         pitch_pid_output = self.pid_pitch.compute(pitch_error, dt)
         pitch_compensator_term = self.pid_compensator_pitch.compute(pitch_error, dt)
         pitch_switch_term = self.pitch_beta * math.tanh(pitch_compensator_term / self.eps)
