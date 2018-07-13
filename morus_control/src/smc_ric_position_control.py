@@ -11,6 +11,10 @@ from sensor_msgs.msg import Imu
 from mav_msgs.msg import Actuators
 import math
 from datetime import datetime
+from morus_msgs.msg import SMCStatusPosition
+from simple_filters import deadzone
+from std_msgs.msg import Header
+
 
 class SmcPositionControl:
 
@@ -58,17 +62,46 @@ class SmcPositionControl:
         rospy.Subscriber('imu', Imu, self.ahrs_cb)
 
         self.euler_ref_pub = rospy.Publisher('angle_ref', Vector3, queue_size=1)
+        self.status_pub = rospy.Publisher('smc_status_pos', SMCStatusPosition, queue_size=1)
+        self.status_msg = SMCStatusPosition()
 
-        self.cfg_server = Server(SmcPosCtlParamsConfig, self.cfg_callback)
         self.rate = 100.0
         self.Ts = 1.0 / self.rate 
         self.ros_rate = rospy.Rate(self.rate)
         self.t_start = rospy.Time.now()
 
         self.update_filter_coefficients()
-
         rospy.loginfo("Initialized position controller.")
 
+        # X - pos compensator
+        self.lambda_x = 0.1
+        self.pid_compensator_x = PID(2 * self.lambda_x, self.lambda_x ** 2, 0.0)
+        self.x_compensator_gain = 0.1
+
+        # Y - pos rate compensator
+        self.lambda_y = 0.1
+        self.pid_compensator_y = PID(2 * self.lambda_y, self.lambda_y ** 2, 0.5)
+        self.y_compensator_gain = 0.001
+
+        # VX compensator
+        self.lambda_vx = 0.1
+        self.pid_compensator_vx = PID(2 * self.lambda_vx, self.lambda_vx ** 2, 0.0)
+        self.vx_compensator_gain = 0.001
+
+        # VY compensator
+        self.lambda_vy = 0.1
+        self.pid_compensator_vy = PID(2 * self.lambda_vy, self.lambda_vy ** 2, 0.5)
+        self.vy_compensator_gain = 0.001
+
+        self.eps = 0.5
+        self.vel_eps = 0.5
+
+        self.x_beta = 0.01
+        self.vx_beta = 0.001
+        self.y_beta = 0.01
+        self.vy_beta = 0.001
+
+        self.cfg_server = Server(SmcPosCtlParamsConfig, self.cfg_callback)
 
     def run(self):
         '''
@@ -76,13 +109,11 @@ class SmcPositionControl:
         '''
 
         while not self.start_flag:
-            print 'Waiting for velocity measurements.'
+            # print 'Waiting for velocity measurements.'
             rospy.sleep(0.5)
-        print "Starting height control."
+        print "SMCPositionControl.run() - Starting position control."
 
         self.t_old = rospy.Time.now()
-        #self.t_old = datetime.now()
-
         while not rospy.is_shutdown():
             
             self.ros_rate.sleep()
@@ -91,19 +122,102 @@ class SmcPositionControl:
             dt = (t - self.t_old).to_sec()
             self.t_old = t
 
-            self.x_ref = self.filter_ref_a *  self.x_ref + (1.0-self.filter_ref_a) * self.x_sp
-            vx_ref = self.pid_x.compute(self.x_ref - self.x_mv, self.Ts)
-            pitch_r = self.pid_vx.compute(vx_ref - self.vx_mv, self.Ts)
-            
-            self.y_ref = self.filter_ref_a * self.y_ref + (1.0-self.filter_ref_a) *  self.y_sp
-            vy_ref = self.pid_y.compute(self.y_ref - self.y_mv, self.Ts)
-            roll_r = -self.pid_vy.compute(vy_ref - self.vy_mv, self.Ts)
+            if dt < 1.0 / self.rate:
+                continue
 
+            # Position prefilters
+            self.x_ref = self.filter_ref_a * self.x_ref + (1.0 - self.filter_ref_a) * self.x_sp
+            self.y_ref = self.filter_ref_a * self.y_ref + (1.0 - self.filter_ref_a) * self.y_sp
+
+            x_error = self.x_ref - self.x_mv
+            y_error = self.y_ref - self.y_mv
+
+            x_error = deadzone(x_error, -0.01, 0.01)
+            y_error = deadzone(y_error, -0.01, 0.01)
+
+            # Outer loop - PID
+            vx_ref = self.pid_x.compute(x_error, dt)
+            vy_ref = self.pid_y.compute(y_error, dt)
+
+            vx_error = vx_ref - self.vx_mv
+            vy_error = vy_ref - self.vy_mv
+
+            # Inner loop - SMC
+            pitch_r = self.vx_inner_loop(vx_error, dt)
+            roll_r = - self.vy_inner_loop(vy_error, dt)
+
+            # Add correction with regard to current yaw angle
             roll_ref = math.cos(self.euler_mv.z) * roll_r + math.sin(self.euler_mv.z) * pitch_r
             pitch_ref = -math.sin(self.euler_mv.z) * roll_r + math.cos(self.euler_mv.z) * pitch_r
 
+            # Publish referent value
             vec3_msg = Vector3(roll_ref, pitch_ref, 0)
             self.euler_ref_pub.publish(vec3_msg)
+
+            # Status message
+            head = Header()
+            head.stamp = rospy.Time.now()
+            self.status_msg.header = head
+
+            self.status_msg.x_sp = self.x_ref
+            self.status_msg.x_mv = self.x_mv
+            self.status_msg.x_sp = self.y_ref
+            self.status_msg.x_mv = self.y_mv
+
+            self.status_msg.vx_sp = vx_ref
+            self.status_msg.vx_mv = self.vx_mv
+            self.status_msg.vx_sp = vy_ref
+            self.status_msg.vx_mv = self.vy_mv
+
+            self.status_pub.publish(self.status_msg)
+
+    def vx_inner_loop(self, vx_error, dt):
+        """
+        Inner loop for x velocity control.
+
+        :param vx_error:
+        :param dt:
+        :return: Pitch reference for attitude controller.
+        """
+        vx_pid_term = self.pid_vx.compute(vx_error, dt)
+        vx_comp_term = self.pid_compensator_vy.compute(vx_error, dt)
+        vx_switch_term = self.vx_beta * math.tanh(vx_comp_term / self.eps)
+
+        # Update status message
+        self.status_msg.vx_pid = vx_pid_term
+        self.status_msg.vx_comp = self.vx_compensator_gain * vx_comp_term
+        self.status_msg.vx_switch = vx_switch_term
+
+        pitch_ref = + \
+            vx_pid_term + \
+            self.vx_compensator_gain * vx_comp_term + \
+            vx_switch_term
+
+        return pitch_ref
+
+    def vy_inner_loop(self, vy_error, dt):
+        """
+        Inner loop for y velocity control.
+
+        :param vy_error:
+        :param dt:
+        :return: Roll reference for attitude controller.
+        """
+        vy_pid_term = self.pid_vx.compute(vy_error, dt)
+        vy_comp_term = self.pid_compensator_vy.compute(vy_error, dt)
+        vy_switch_term = self.vy_beta * math.tanh(vy_comp_term / self.eps)
+
+        # Update status message
+        self.status_msg.vy_pid = vy_pid_term
+        self.status_msg.vy_comp = self.vy_compensator_gain * vy_comp_term
+        self.status_msg.vy_switch = vy_switch_term
+
+        roll_ref = + \
+            vy_pid_term + \
+            self.vy_compensator_gain * vy_comp_term + \
+            vy_switch_term
+
+        return roll_ref
 
     def pos_cb(self, msg):
         '''
@@ -233,6 +347,18 @@ class SmcPositionControl:
             config.filter_ref = self.filter_const_ref
             config.filter_meas = self.filter_const_meas
 
+            config.lambd = self.lambda_x
+            config.vel_lambda = self.lambda_vx
+
+            config.comp_gain = self.x_compensator_gain
+            config.vel_comp_gain = self.vx_compensator_gain
+
+            config.eps = self.eps
+            config.vel_eps = self.vel_eps
+
+            config.beta = self.x_beta
+            config.vel_beta = self.vx_beta
+
             self.config_start = True
         else:
             # The following code just sets up the P,I,D gains for all controllers
@@ -257,8 +383,36 @@ class SmcPositionControl:
             self.filter_const_meas = config.filter_meas
             self.update_filter_coefficients()
 
+            self.pid_compensator_x.set_kp(2 * config.lambd)
+            self.pid_compensator_x.set_ki(config.lambd ** 2)
+
+            self.pid_compensator_y.set_kp(2 * config.lambd)
+            self.pid_compensator_y.set_ki(config.lambd ** 2)
+
+            self.pid_compensator_vx.set_kp(2 * config.vel_lambda)
+            self.pid_compensator_vx.set_ki(config.vel_lambda ** 2)
+
+            self.pid_compensator_vy.set_kp(2 * config.vel_lambda)
+            self.pid_compensator_vy.set_ki(config.vel_lambda ** 2)
+
+            self.x_compensator_gain = config.comp_gain
+            self.y_compensator_gain = config.comp_gain
+
+            self.vx_compensator_gain = config.vel_comp_gain
+            self.vy_compensator_gain = config.vel_comp_gain
+
+            self.eps = config.eps
+            self.vel_eps = config.vel_eps
+
+            self.x_beta = config.beta
+            self.y_beta = config.beta
+
+            self.vx_beta = config.vel_beta
+            self.vy_beta = config.vel_beta
+
         # this callback should return config data back to server
         return config
+
 
 if __name__ == '__main__':
 

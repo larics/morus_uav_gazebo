@@ -9,6 +9,7 @@ add_message_files(
   PIDController.msg
   SMCStatusHeight.msg
   SMCStatusAttitude.msg
+  SMCStatusPosition.msg
 )
 
 generate_messages(DEPENDENCIES std_msgs)

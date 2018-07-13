@@ -335,9 +335,9 @@ class SmcAttitudeController:
         :return: Roll rate reference.
         """
 
-        roll_error = deadzone(roll_error, - 0.002, 0.002)
+        #roll_error = deadzone(roll_error, - 0.001, 0.001)
         roll_pid_output = self.pid_roll.compute(roll_error, dt)
-        roll_compensator_term = self.pid_compensator_roll.compute(roll_error , dt)
+        roll_compensator_term = self.pid_compensator_roll.compute(roll_error, dt)
         roll_switch_term = self.roll_beta * math.tanh(roll_compensator_term / self.eps)
         roll_ff_term = self.roll_feed_forward_gain * self.roll_feed_forward_filter.compute(self.euler_sp.x)
         roll_ff_term = saturation(roll_ff_term, self.roll_rate_min, self.roll_rate_max)
@@ -364,7 +364,7 @@ class SmcAttitudeController:
         :param pitch_error:
         :return: Pitch rate reference.
         """
-        pitch_error = deadzone(pitch_error, - 0.002, 0.002)
+        #pitch_error = deadzone(pitch_error, - 0.001, 0.001)
         pitch_pid_output = self.pid_pitch.compute(pitch_error, dt)
         pitch_compensator_term = self.pid_compensator_pitch.compute(pitch_error, dt)
         pitch_switch_term = self.pitch_beta * math.tanh(pitch_compensator_term / self.eps)
