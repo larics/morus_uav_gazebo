@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name="namespace" default="/morus"/>
+
+      <!-- Load joint controller configurations from YAML file to parameter server -->
+      <rosparam file="$(find morus_control)/config/morus_control.yaml" command="load"/>
+
+      <node pkg="morus_control" type="mav_state_pub.py" name="mav_state_pub" output="screen"  ns="$(arg namespace)">
+        <remap from="imu" to="ahrs" />
+      </node>
+
+      <node pkg="morus_control" type="float2gmStatus.py" name="translator" ns="$(arg namespace)"/>
+
+      <!-- load the controllers -->
+      <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+        output="screen" ns="$(arg namespace)"  args="joint_state_controller
+          movable_mass_0_position_controller
+          movable_mass_1_position_controller
+          movable_mass_2_position_controller
+          movable_mass_3_position_controller">
+      <remap from="/robot_description" to="$(arg namespace)/robot_description"/>
+      </node>
+
+      <!-- convert joint states to TF transforms for rviz, etc -->
+      <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"
+        respawn="false" output="screen"  ns="$(arg namespace)">
+        <!--remap from="/joint_states" to="$(arg namespace)/joint_states"/-->
+        <remap from="/robot_description" to="$(arg namespace)/robot_description"/>
+      </node>
+
+      <node pkg="morus_control" type="smc_ric_height_control.py" name="smc_height_control" output="screen"  ns="$(arg namespace)">
+      </node>
+
+      <node pkg="morus_control" type="smc_ric_attitude_control.py" name="smc_attitude_control" output="screen"  ns="$(arg namespace)">
+      </node>
+
+      <node pkg="morus_control" type="smc_ric_position_control.py" name="smc_position_control" output="screen"  ns="$(arg namespace)">
+      </node >
+
+      <!--node pkg="morus_control" type="mass_ctl_attitude.py" name="mass_ctl_attitude" output="screen"  ns="$(arg namespace)">
+      </node-->
+
+</launch>

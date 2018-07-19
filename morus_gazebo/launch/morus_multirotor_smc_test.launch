@@ -27,6 +27,9 @@
 
      <include file="$(find morus_gazebo)/launch/spawn_morus_multirotor.launch" />
 
-     <include file="$(find morus_control)/launch/morus_smc_control.launch" />
+     <include file="$(find morus_control)/launch/morus_smc_attitude_control.launch" />
+
+     <node pkg="morus_control" type="smc_test.py" name="smc_test" output="screen"  ns="morus">
+     </node>
 
 </launch>
