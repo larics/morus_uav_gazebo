@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+
+<!--
+    mmuav_geometric_control.launch
+    Created on: May 11, 2018
+        Author: lmark
+-->
+
+<launch>
+    
+    <arg name="namespace" default="uav"/>
+    <arg name="rate" default="100"/>
+    <arg name="type" default="uav"/>
+    
+    <node name="geometric_control" pkg="morus_control" type="UavGeometryControl"
+        output="screen">
+      <param name="rate" type="double" value="$(arg rate)"/>
+      <param name="type" type="string" value="$(arg type)"/>
+      <param name="mass_ctl" type="boolean" value="false"/>
+    </node>
+    
+</launch>

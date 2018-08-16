@@ -106,6 +106,7 @@
     parent_link="base_link"
     pose_topic="pose"
     pose_with_covariance_topic="pose_with_covariance"
+    velocity_relative_topic="velocity_relative"
     position_topic="position"
     transform_topic="transform"
     odometry_topic="odometry"

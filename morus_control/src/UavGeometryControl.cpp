@@ -16,19 +16,19 @@ using namespace std;
 const double G = 9.81;
 
 // UAV constants
-const double UAV_MASS = 2.1;
-const double ARM_LENGTH = 0.314;
-const double MOMENT_CONSTANT = 0.016;
-const double MOTOR_CONSTANT = 8.54858e-06;
+const double UAV_MASS = 30;
+const double ARM_LENGTH = 0.515;
+const double MOMENT_CONSTANT = 0.01;
+const double MOTOR_CONSTANT = 0.000456874;
 
 // ROTOR constants
-const double ROTOR_MASS = 0.01;
-const double ROTOR_VELOCITY_SLOWDOWN_SIM = 15;
-const double ROTOR_RADIUS = 0.1524;
+const double ROTOR_MASS = 0.2;
+const double ROTOR_VELOCITY_SLOWDOWN_SIM = 10;
+const double ROTOR_RADIUS = 0.33;
 const double MIN_ROTOR_VELOCITY = 0;
-const double MAX_ROTOR_VELOCITY = 1475;
+const double MAX_ROTOR_VELOCITY = 838;
 Matrix<double, 3, 3> INERTIA;
-const double D =  ARM_LENGTH + ROTOR_RADIUS / 2;
+const double D =  ARM_LENGTH + 0.1;
 const double MAXIMUM_MOMENT =
 		MAX_ROTOR_VELOCITY * MAX_ROTOR_VELOCITY * MOTOR_CONSTANT // MAX FORCE
 		* D;
@@ -73,20 +73,20 @@ UavGeometryControl::UavGeometryControl(int rate, std::string uav_ns)
 
 	// Initialize inertia matrix
 	INERTIA.setZero(3, 3);
-	INERTIA(0, 0) = 0.0826944;
-	INERTIA(1, 1) = 0.0826944;
-	INERTIA(2, 2) = 0.0104;
+	INERTIA(0, 0) = 5.5268;
+	INERTIA(1, 1) = 5.5268;
+	INERTIA(2, 2) = 6.8854;
 
 	Matrix<double, 3, 3> rotor_inertia;
 	rotor_inertia.setZero(3, 3);
 	rotor_inertia(0, 0) = 1/12 * ROTOR_MASS
-			* (0.031 * 0.031 + 0.005 * 0.005)
+			* (0.015 * 0.015 + 0.003 * 0.003)
 			* ROTOR_VELOCITY_SLOWDOWN_SIM;
 	rotor_inertia(1, 1) = 1/12 * ROTOR_MASS
-			* (4 * ROTOR_RADIUS * ROTOR_RADIUS + 0.005 * 0.005)
+			* (4 * ROTOR_RADIUS * ROTOR_RADIUS + 0.003 * 0.003)
 			* ROTOR_VELOCITY_SLOWDOWN_SIM;
 	rotor_inertia(2, 2) = 1/12 * ROTOR_MASS
-			* (4 * ROTOR_RADIUS * ROTOR_RADIUS + 0.031 * 0.031)
+			* (4 * ROTOR_RADIUS * ROTOR_RADIUS + 0.015 * 0.015)
 			* ROTOR_VELOCITY_SLOWDOWN_SIM
 			+ ROTOR_MASS * ARM_LENGTH * ARM_LENGTH;
 
@@ -163,25 +163,26 @@ UavGeometryControl::UavGeometryControl(int rate, std::string uav_ns)
 	// Initialize controller parameters
 	// Parameters initialized according to 2010-extended.pdf
 	k_x_.setZero(3, 3);
-	k_x_(0, 0) = 10.25;
-	k_x_(1, 1) = 10.25;
-	k_x_(2, 2) = 50;
+	k_x_(0, 0) = 1;
+	k_x_(1, 1) = 1;
+	k_x_(2, 2) = 1;
 
 	k_v_.setZero(3, 3);
-	k_v_(0, 0) = 6.5;
-	k_v_(1, 1) = 6.5;
-	k_v_(2, 2) = 20;
+	k_v_(0, 0) = 1;
+	k_v_(1, 1) = 1;
+	k_v_(2, 2) = 1;
 
 	k_R_.setZero(3, 3);
-	k_R_(0, 0) = 10;
-	k_R_(1, 1) = 10;
-	k_R_(2, 2) = 12;
+	k_R_(0, 0) = 1;
+	k_R_(1, 1) = 1;
+	k_R_(2, 2) = 1;
 
 	k_omega_.setZero(3, 3);
-	k_omega_(0, 0) = 5;
-	k_omega_(1, 1) = 5;
-	k_omega_(2, 2) = 1.54;
+	k_omega_(0, 0) = 1;
+	k_omega_(1, 1) = 1;
+	k_omega_(2, 2) = 1;
 
+	cout << k_omega_ << "\n";
 	// Initialize subscribers and publishers
 	imu_ros_sub_ = node_handle_.subscribe(
 			"/" + uav_ns + "/imu", 1,
