@@ -52,6 +52,7 @@
     child_frame_id="odom"
     parent_link="base_link"
     pose_topic="pose"
+    velocity_relative_topic="velocity_relative"
     pose_with_covariance_topic="pose_with_covariance"
     position_topic="position"
     transform_topic="transform"
