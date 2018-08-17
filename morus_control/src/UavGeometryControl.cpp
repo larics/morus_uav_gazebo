@@ -77,21 +77,40 @@ UavGeometryControl::UavGeometryControl(int rate, std::string uav_ns)
 	INERTIA(1, 1) = 5.5268;
 	INERTIA(2, 2) = 6.8854;
 
-	Matrix<double, 3, 3> rotor_inertia;
-	rotor_inertia.setZero(3, 3);
-	rotor_inertia(0, 0) = 1/12 * ROTOR_MASS
+	Matrix<double, 3, 3> rotor_inertia_1;
+	rotor_inertia_1.setZero(3, 3);
+	rotor_inertia_1(0, 0) = 1/12 * ROTOR_MASS
 			* (0.015 * 0.015 + 0.003 * 0.003)
-			* ROTOR_VELOCITY_SLOWDOWN_SIM;
-	rotor_inertia(1, 1) = 1/12 * ROTOR_MASS
+			* ROTOR_VELOCITY_SLOWDOWN_SIM
+			+ ROTOR_MASS * 0.325 * 0.325;
+	rotor_inertia_1(1, 1) = 1/12 * ROTOR_MASS
 			* (4 * ROTOR_RADIUS * ROTOR_RADIUS + 0.003 * 0.003)
-			* ROTOR_VELOCITY_SLOWDOWN_SIM;
-	rotor_inertia(2, 2) = 1/12 * ROTOR_MASS
+			* ROTOR_VELOCITY_SLOWDOWN_SIM
+			+ ROTOR_MASS * (0.325 * 0.325 + D * D);
+	rotor_inertia_1(2, 2) = 1/12 * ROTOR_MASS
 			* (4 * ROTOR_RADIUS * ROTOR_RADIUS + 0.015 * 0.015)
 			* ROTOR_VELOCITY_SLOWDOWN_SIM
 			+ ROTOR_MASS * ARM_LENGTH * ARM_LENGTH;
-
-	INERTIA = INERTIA + 4 * rotor_inertia;
-
+    
+    Matrix<double, 3, 3> rotor_inertia_2;
+	rotor_inertia_2.setZero(3, 3);
+	rotor_inertia_2(0, 0) = 1/12 * ROTOR_MASS
+			* (0.015 * 0.015 + 0.003 * 0.003)
+			* ROTOR_VELOCITY_SLOWDOWN_SIM
+			+ ROTOR_MASS * (0.325 * 0.325 + D * D);
+	rotor_inertia_2(1, 1) = 1/12 * ROTOR_MASS
+			* (4 * ROTOR_RADIUS * ROTOR_RADIUS + 0.003 * 0.003)
+			* ROTOR_VELOCITY_SLOWDOWN_SIM
+			+ ROTOR_MASS * 0.325 * 0.325;
+	rotor_inertia_2(2, 2) = 1/12 * ROTOR_MASS
+			* (4 * ROTOR_RADIUS * ROTOR_RADIUS + 0.015 * 0.015)
+			* ROTOR_VELOCITY_SLOWDOWN_SIM
+			+ ROTOR_MASS * ARM_LENGTH * ARM_LENGTH;
+	
+	cout << "Rotor inertia:" << "\n" << rotor_inertia_1 << "\n";
+	INERTIA = INERTIA + 2 * rotor_inertia_1 + 2 * rotor_inertia_2;
+    cout << "Total inertia:" << "\n" << INERTIA << "\n";
+	
 	// Initialize eye(3) matrix
 	EYE3.setZero(3, 3);
 	EYE3(0, 0) = 1;
@@ -163,26 +182,25 @@ UavGeometryControl::UavGeometryControl(int rate, std::string uav_ns)
 	// Initialize controller parameters
 	// Parameters initialized according to 2010-extended.pdf
 	k_x_.setZero(3, 3);
-	k_x_(0, 0) = 1;
-	k_x_(1, 1) = 1;
-	k_x_(2, 2) = 1;
+	k_x_(0, 0) = 120;
+	k_x_(1, 1) = 120;
+	k_x_(2, 2) = 714.28;
 
 	k_v_.setZero(3, 3);
-	k_v_(0, 0) = 1;
-	k_v_(1, 1) = 1;
-	k_v_(2, 2) = 1;
+	k_v_(0, 0) = 84;
+	k_v_(1, 1) = 84;
+	k_v_(2, 2) = 285.71;
 
 	k_R_.setZero(3, 3);
-	k_R_(0, 0) = 1;
-	k_R_(1, 1) = 1;
-	k_R_(2, 2) = 1;
+	k_R_(0, 0) = 23.04;
+	k_R_(1, 1) = 23.04;
+	k_R_(2, 2) = 5;
 
 	k_omega_.setZero(3, 3);
-	k_omega_(0, 0) = 1;
-	k_omega_(1, 1) = 1;
-	k_omega_(2, 2) = 1;
+	k_omega_(0, 0) = 16.29;
+	k_omega_(1, 1) = 16.29;
+	k_omega_(2, 2) = 2.5;
 
-	cout << k_omega_ << "\n";
 	// Initialize subscribers and publishers
 	imu_ros_sub_ = node_handle_.subscribe(
 			"/" + uav_ns + "/imu", 1,
@@ -352,8 +370,8 @@ void UavGeometryControl::runControllerLoop()
 				R_mv_);
 
 		// Position and heading prefilter
-		x_des = x_d_; //x_old + 0.025 * (x_d_ - x_old);
-		b1_des = b1_old + 0.05 * (b1_d_ - b1_old);
+		x_des = x_old + 0.05 * (x_d_ - x_old);
+		b1_des = b1_old + 0.01 * (b1_d_ - b1_old);
 
 		// TRAJECTORY TRACKING BLOCK
 		trajectoryTracking(
@@ -649,7 +667,7 @@ void UavGeometryControl::attitudeTracking(
 		b2_c = b2_c / b2_c.norm();
 		R_c.setZero(3, 3);
 		R_c << b1_c, b2_c, b3_desired;
-
+        
 		calculateDesiredAngularVelAndAcc(R_c);
 
 		// Remap calculated to desired
@@ -705,7 +723,7 @@ void UavGeometryControl::attitudeTracking(
 
 	M_u(0, 0) = saturation((double)M_u(0, 0), -MAXIMUM_MOMENT, MAXIMUM_MOMENT);
 	M_u(1, 0) = saturation((double)M_u(1, 0), -MAXIMUM_MOMENT, MAXIMUM_MOMENT);
-	M_u(2, 0) = saturation((double)M_u(2, 0), -MAXIMUM_MOMENT, MAXIMUM_MOMENT);
+	M_u(2, 0) = saturation((double)M_u(2, 0), -3.5, 3.5);
 
 	status_msg_.e_R[0] = e_R(0, 0);
 	status_msg_.e_R[1] = e_R(1, 0);
