@@ -370,8 +370,8 @@ void UavGeometryControl::runControllerLoop()
 				R_mv_);
 
 		// Position and heading prefilter
-		x_des = x_old + 0.05 * (x_d_ - x_old);
-		b1_des = b1_old + 0.01 * (b1_d_ - b1_old);
+		x_des = x_d_; // x_old + 0.05 * (x_d_ - x_old);
+		b1_des = b1_old + 0.025 * (b1_d_ - b1_old);
 
 		// TRAJECTORY TRACKING BLOCK
 		trajectoryTracking(
@@ -574,8 +574,9 @@ void UavGeometryControl::trajectoryTracking(
 		- k_x_ * e_x
 		- k_v_ * e_v
 		+ UAV_MASS * G * E3
-		+ UAV_MASS * a_d_;
-	f_u = A.dot( R_mv_ * E3 );
+		- UAV_MASS * a_d_;
+		
+    f_u = A.dot( R_mv_ * E3 );
 	b3_d = A / A.norm();
 
 	status_msg_.e_x[0] = (double)e_x(0, 0);
@@ -721,9 +722,9 @@ void UavGeometryControl::attitudeTracking(
 				- R_mv_.adjoint() * R_d_ * alpha_d_
 			);
 
-	M_u(0, 0) = saturation((double)M_u(0, 0), -MAXIMUM_MOMENT, MAXIMUM_MOMENT);
-	M_u(1, 0) = saturation((double)M_u(1, 0), -MAXIMUM_MOMENT, MAXIMUM_MOMENT);
-	M_u(2, 0) = saturation((double)M_u(2, 0), -3.5, 3.5);
+	M_u(0, 0) = saturation((double)M_u(0, 0), -15, 15);
+	M_u(1, 0) = saturation((double)M_u(1, 0), -15, 15);
+	M_u(2, 0) = saturation((double)M_u(2, 0), -10, 10);
 
 	status_msg_.e_R[0] = e_R(0, 0);
 	status_msg_.e_R[1] = e_R(1, 0);
