@@ -457,27 +457,61 @@ void UavGeometryControl::runControllerLoop()
 		std_msgs::Header head;
 		head.stamp = ros::Time::now();
 		status_msg_.header = head;
+		
 		status_msg_.roll_mv = euler_mv_.x;
 		status_msg_.roll_sp = euler_d_(0, 0);
+		
 		status_msg_.pitch_mv = euler_mv_.y;
 		status_msg_.pitch_sp = euler_d_(1, 0);
+		
 		status_msg_.yaw_mv = euler_mv_.z;
 		status_msg_.yaw_sp = euler_d_(2, 0);
+		
 		status_msg_.att_err = att_err.trace() / 2;
 		status_msg_.pos_err =sqrt((double)(x_d_ - x_mv_).dot(x_d_ - x_mv_));
+		
 		status_msg_.rotor_velocities[0] = rotor_vel_msg.angular_velocities[0];
 		status_msg_.rotor_velocities[1] = rotor_vel_msg.angular_velocities[1];
 		status_msg_.rotor_velocities[2] = rotor_vel_msg.angular_velocities[2];
 		status_msg_.rotor_velocities[3] = rotor_vel_msg.angular_velocities[3];
+		
 		status_msg_.moments[0] = M_u(0, 0);
 		status_msg_.moments[1] = M_u(1, 0);
 		status_msg_.moments[2] = M_u(2, 0);
+		status_msg_.force = f_u;
+		
 		status_msg_.x_mv = x_mv_(0, 0);
 		status_msg_.y_mv = x_mv_(1, 0);
 		status_msg_.z_mv = x_mv_(2, 0);
+		
 		status_msg_.x_sp = x_des(0, 0);
 		status_msg_.y_sp = x_des(1, 0);
 		status_msg_.z_sp = x_des(2, 0);
+	    
+	    status_msg_.a_d[0] = a_d_(0, 0);
+		status_msg_.a_d[1] = a_d_(1, 0);
+		status_msg_.a_d[2] = a_d_(2, 0);
+		
+		status_msg_.v_d[0] = v_d_(0, 0);
+		status_msg_.v_d[1] = v_d_(1, 0);
+		status_msg_.v_d[2] = v_d_(2, 0);
+		
+		status_msg_.b1_d[0] = b1_des(0, 0);
+		status_msg_.b1_d[1] = b1_des(1, 0);
+		status_msg_.b1_d[2] = b1_des(2, 0);
+
+		status_msg_.b1_mv[0] = R_mv_(0,0);
+		status_msg_.b1_mv[1] = R_mv_(1,0);
+		status_msg_.b1_mv[2] = R_mv_(2,0);
+
+		status_msg_.omega_d[0] = omega_d_(0, 0);
+		status_msg_.omega_d[1] = omega_d_(1, 0);
+		status_msg_.omega_d[2] = omega_d_(2, 0);
+
+    	status_msg_.alpha_d[0] = alpha_d_(0, 0);
+		status_msg_.alpha_d[1] = alpha_d_(1, 0);
+		status_msg_.alpha_d[2] = alpha_d_(2, 0);
+		
 		status_ros_pub_.publish(status_msg_);
 
 		//cout << "f_u: \n" << f_u << "\n";
@@ -747,11 +781,19 @@ void UavGeometryControl::calculateDesiredAngularVelAndAcc(
 
 	Matrix<double, 3, 3> R_c_ddot = (R_c_dot - R_c_dot_old) / 0.1;
 	alpha_c_skew = - omega_c_skew * omega_c_skew + R_c.adjoint() * R_c_ddot;
-
+    
 	// Remap calculated values to desired
 	veeOperator(omega_c_skew, omega_d_);
 	veeOperator(alpha_c_skew, alpha_d_);
-
+    
+	omega_d_(0, 0) = saturation((double)omega_d_(0, 0), -1, 1);
+	omega_d_(1, 0) = saturation((double)omega_d_(1, 0), -1, 1);
+	omega_d_(2, 0) = saturation((double)omega_d_(2, 0), -1, 1);
+	
+	alpha_d_(0, 0) = saturation((double)alpha_d_(0, 0), -3, 3);
+	alpha_d_(1, 0) = saturation((double)alpha_d_(1, 0), -3, 3);
+	alpha_d_(2, 0) = saturation((double)alpha_d_(2, 0), -3, 3);
+	
 	cout << "omega_d: " << "\n" << omega_d_ << "\n";
 	cout << "alpha_d: " << "\n" << alpha_d_ << "\n";
 
