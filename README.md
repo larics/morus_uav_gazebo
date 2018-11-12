@@ -75,4 +75,4 @@ roslaunch morus_gazebo morus_vpcmmc_attitude_height_control.launch uav_mesh_file
 ```
 # Note 
 MORUS UAV meshes are not available directly on this branch.  
-Please download them [here](https://ferhr.sharepoint.com/:u:/s/lmark/ESZKkfxH_ExDjHurrWN-qYwBMWoj89wx8ZQCsd7Qd9VhQg?e=r31XX9) and put the mesh folder inside the morus_description package.
+Please download them [here](https://ferhr.sharepoint.com/:u:/s/lmark/ESZKkfxH_ExDjHurrWN-qYwBMWoj89wx8ZQCsd7Qd9VhQg?e=67Z2WY) and put the mesh folder inside the morus_description package.
