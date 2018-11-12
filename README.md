@@ -73,3 +73,6 @@ If the simulation slows down your computer, you can run the simulation with alte
 ```
 roslaunch morus_gazebo morus_vpcmmc_attitude_height_control.launch uav_mesh_file:=box.dae
 ```
+# Note 
+MORUS UAV meshes are not available directly on this branch.  
+Please download them [here](https://ferhr.sharepoint.com/:u:/s/lmark/ESZKkfxH_ExDjHurrWN-qYwBMWoj89wx8ZQCsd7Qd9VhQg?e=r31XX9) and put the mesh folder inside the morus_description package.
