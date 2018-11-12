@@ -56,14 +56,14 @@ class HeightControl:
         #########################################################
         #########################################################
         # Add parameters for z controller
-        self.pid_z.set_kp(0.5)
-        self.pid_z.set_ki(0.01)
-        self.pid_z.set_kd(0.75)
+        self.pid_z.set_kp(1.5)
+        self.pid_z.set_ki(0.1)
+        self.pid_z.set_kd(0.1)
 
         # Add parameters for vz controller
-        self.pid_vz.set_kp(20)#87.2)
+        self.pid_vz.set_kp(40)
         self.pid_vz.set_ki(0.1)
-        self.pid_vz.set_kd(10)#10.89)
+        self.pid_vz.set_kd(0.0)
 
         # Yaw rate params
         self.pid_yaw_rate.set_kp(75)
@@ -82,7 +82,6 @@ class HeightControl:
         self.mot_speed = 0              # referent motors velocity, computed by PID cascade
 
         self.gm_attitude_ctl = 0        # flag indicates if attitude control is turned on
-        self.gm_attitude_ctl = rospy.get_param('~gm_attitude_ctl')
 
         self.t_old = 0
 
@@ -109,6 +108,7 @@ class HeightControl:
         self.t_old = rospy.Time.now()
         #self.t_old = datetime.now()
 
+        print 'run height_ctl'
         while not rospy.is_shutdown():
             self.ros_rate.sleep()
 

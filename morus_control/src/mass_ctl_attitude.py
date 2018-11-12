@@ -121,7 +121,7 @@ class AttitudeControl:
         '''
         Runs ROS node - computes PID algorithms for cascade attitude control.
         '''
-
+        print 'run mass_ctl'
         while rospy.get_time() == 0:
             print 'Waiting for clock server to start'
 
