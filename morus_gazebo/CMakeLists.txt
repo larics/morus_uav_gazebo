@@ -174,17 +174,17 @@ link_directories(${GAZEBO_LIBRARY_DIRS})# ${OGRE_LIBRARY_DIRS})
 include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS})# ${Boost_INCLUDE_DIR}  ${OGRE_INCLUDE_DIRS} ${OGRE-Terrain_INCLUDE_DIRS})
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${GAZEBO_CXX_FLAGS}")
 
-add_library(${PROJECT_NAME}_gm_status plugins/gm_status/gmStatus.cpp)
-target_link_libraries(${PROJECT_NAME}_gm_status ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+#add_library(${PROJECT_NAME}_gm_status plugins/gm_status/gmStatus.cpp)
+#target_link_libraries(${PROJECT_NAME}_gm_status ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 #add_library(${PROJECT_NAME}_get_pose plugins/get_pose/get_pose.cpp)
 #target_link_libraries(${PROJECT_NAME}_get_pose  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
-add_library(${PROJECT_NAME}_battery_status plugins/battery_status/batteryStatus.cpp)
-target_link_libraries(${PROJECT_NAME}_battery_status  ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+#add_library(${PROJECT_NAME}_battery_status plugins/battery_status/batteryStatus.cpp)
+#target_link_libraries(${PROJECT_NAME}_battery_status  ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
-add_library(${PROJECT_NAME}_base_attitude2motion plugins/base_attitude2motion/baseAttitude2Motion.cpp)
-target_link_libraries(${PROJECT_NAME}_base_attitude2motion  ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
+#add_library(${PROJECT_NAME}_base_attitude2motion plugins/base_attitude2motion/baseAttitude2Motion.cpp)
+#target_link_libraries(${PROJECT_NAME}_base_attitude2motion  ${roscpp_LIBRARIES} ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 add_executable(ned_pose_publisher src/nodes/ned_pose_publisher.cpp)
 target_link_libraries(ned_pose_publisher ${catkin_LIBRARIES})

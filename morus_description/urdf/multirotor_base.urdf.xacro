@@ -79,9 +79,9 @@
         <!--origin rpy="0 0 ${orientation}" xyz="0 0 ${0*movable_mass_dimension/2}"/-->
         <origin rpy="0 0 ${orientation}" xyz="0 0 0"/>
         <geometry>
-          <!--mesh filename="package://morus_description/meshes/${mesh_file_mass}"
-            scale="1 1 1" /-->
-          <box size="${1*dimension} ${1*dimension} ${1*dimension}"/>
+          <mesh filename="package://morus_description/meshes/${mesh_file_mass}"
+            scale="1 1 1" />
+          <!-- box size="${1*dimension} ${1*dimension} ${1*dimension}"/ -->
         </geometry>
       </visual>
       <collision>

@@ -38,5 +38,4 @@ logs
 CATKIN_IGNORE
 #Python stuff
 *.pyc
-/morus_description/meshes/*.dae
 .idea
