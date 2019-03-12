@@ -38,7 +38,7 @@ class HeightControl:
         self.start_flag = False         # indicates if we received the first measurement
         self.config_start = False       # flag indicates if the config callback is called for the first time
 
-        self.z_sp = 1                   # z-position set point
+        self.z_sp = 0.7                   # z-position set point
         self.z_ref_filt = 0             # z ref filtered
         self.z_mv = 0                   # z-position measured value
         self.pid_z = PID()              # pid instance for z control
