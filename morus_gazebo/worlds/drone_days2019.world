@@ -86,10 +86,10 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
     <state world_name='default'>
-      <sim_time>928 608000000</sim_time>
-      <real_time>113 302583021</real_time>
-      <wall_time>1552395638 523608380</wall_time>
-      <iterations>112831</iterations>
+      <sim_time>1146 840000000</sim_time>
+      <real_time>219 243682288</real_time>
+      <wall_time>1552396358 863535905</wall_time>
+      <iterations>218232</iterations>
       <model name='asphalt_plane_0'>
         <pose frame=''>-12.9947 0.019106 0 0 -0 0</pose>
         <scale>1 1 1</scale>
@@ -145,6 +145,16 @@
         <scale>1 1 1</scale>
         <link name='link'>
           <pose frame=''>-12.9957 20.0047 0 0 -0 0</pose>
+          <velocity>0 0 0 0 -0 0</velocity>
+          <acceleration>0 0 0 0 -0 0</acceleration>
+          <wrench>0 0 0 0 -0 0</wrench>
+        </link>
+      </model>
+      <model name='box_target_red'>
+        <pose frame=''>12.5306 24.3326 1 0 -0 0</pose>
+        <scale>1 1 1</scale>
+        <link name='link'>
+          <pose frame=''>12.5306 24.3326 1 0 -0 0</pose>
           <velocity>0 0 0 0 -0 0</velocity>
           <acceleration>0 0 0 0 -0 0</acceleration>
           <wrench>0 0 0 0 -0 0</wrench>
@@ -456,7 +466,7 @@
     </state>
     <gui fullscreen='0'>
       <camera name='user_camera'>
-        <pose frame=''>5.56225 66.4 50.0539 0 0.729796 -1.75898</pose>
+        <pose frame=''>0.701605 28.9922 14.2379 0 0.729798 -0.730967</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
       </camera>
@@ -2058,6 +2068,42 @@
       </link>
       <pose frame=''>16.907 26.2365 0 0 -0 1.5707</pose>
       <enable_wind>1</enable_wind>
+    </model>
+    <model name='box_target_red'>
+      <pose frame=''>12.5306 24.3326 1 0 -0 0</pose>
+      <static>1</static>
+      <link name='link'>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>2 2 0.15</size>
+            </box>
+          </geometry>
+          <max_contacts>10</max_contacts>
+          <surface>
+            <contact>
+              <ode/>
+            </contact>
+            <bounce/>
+            <friction>
+              <torsional>
+                <ode/>
+              </torsional>
+              <ode/>
+            </friction>
+          </surface>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <mesh>
+              <uri>model://box_target_red/meshes/mesh.dae</uri>
+            </mesh>
+          </geometry>
+        </visual>
+        <self_collide>0</self_collide>
+        <enable_wind>0</enable_wind>
+        <kinematic>0</kinematic>
+      </link>
     </model>
   </world>
 </sdf>
