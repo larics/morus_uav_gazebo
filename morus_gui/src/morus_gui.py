@@ -7,7 +7,11 @@ import sys
 import rospkg 
 
 from run_gazebo import RunGazeboSimulator
+from register_dialog import RegisterUser
 
+class UIState():
+    NO_USER = 0
+    USER_REGISTERED = 1
 
 class MorusGUI(QtWidgets.QWidget):
     
@@ -21,14 +25,16 @@ class MorusGUI(QtWidgets.QWidget):
         
         self.setupUI()
         self.setupCallbacks()
+        self.current_state = UIState.NO_USER
         
     def setupCallbacks(self):
         """
         Setup all needed callbacks for GUI objects.
         """
 
-        self.start_button.clicked.connect(self.start_btb_callback)
+        self.start_button.clicked.connect(self.start_btn_callback)
         self.stop_button.clicked.connect(self.stop_btn_callback)
+        self.register_button.clicked.connect(self.register_btn_callback)
 
     def setupUI(self):
         """
@@ -38,7 +44,7 @@ class MorusGUI(QtWidgets.QWidget):
         # Create all buttons
         self.register_button = QPushButton("New User")
         self.start_button = QPushButton("Start")
-        #self.start_button.setEnabled(False)
+        self.start_button.setEnabled(False)
         self.stop_button = QPushButton("Stop")
         self.stop_button.setEnabled(False)
         
@@ -55,10 +61,10 @@ class MorusGUI(QtWidgets.QWidget):
         # Create information label
         self.info_label = QLabel()
         self.info_label.setAlignment(Qt.AlignCenter)
-        newfont = QtGui.QFont("Aerial", 18, QtGui.QFont.Bold) 
+        newfont = QtGui.QFont("Aerial", 15, QtGui.QFont.Bold) 
         self.info_label.setFont(newfont)
         self.info_label.setText(MorusGUI.INFO_TEXT_INIT)
-        
+
         # Setup vertical layout
         layout = QVBoxLayout()
         layout.addWidget(logo_label)
@@ -72,7 +78,16 @@ class MorusGUI(QtWidgets.QWidget):
         self.setWindowTitle("Drone Days 2019")
         self.show()
 
-    def start_btb_callback(self):
+    def register_btn_callback(self):
+        """
+        Generate and run a user registration form.
+        """
+
+        dialog_box = RegisterUser()
+        if dialog_box.exec_():
+            pass
+
+    def start_btn_callback(self):
         """
         Start button callback.rospack = rospkg.RosPack()
         path = rospack.get_path("morus_gazebo")
