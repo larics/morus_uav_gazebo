@@ -40,6 +40,7 @@ class MorusGUI(QWidget):
         self.stop_button.clicked.connect(self.stop_btn_callback)
         self.register_button.clicked.connect(self.register_btn_callback)
         self.exusr_button.clicked.connect(self.exusr_btn_callback)
+        self.exit_button.clicked.connect(self.exit_btn_callback)
 
     def setupUI(self):
         """
@@ -83,12 +84,12 @@ class MorusGUI(QWidget):
         layout.addWidget(self.stop_button)
         layout.addWidget(self.exit_button)
 
-        self.set_UI_state(UIState.NO_USER)
-
         self.setLayout(layout)
         self.setGeometry(300, 300, 250, 150)
         self.setWindowTitle("Drone Days 2019")
         self.show()
+
+        self.set_UI_state(UIState.NO_USER)
 
     def register_btn_callback(self):
         """
@@ -118,41 +119,34 @@ class MorusGUI(QWidget):
     def set_UI_state(self, new_state, nick=None):
 
         if (new_state == UIState.USER_REGISTERED):
-            self.register_button.setEnabled(False)
-            self.register_button.setVisible(False)
-
-            self.exusr_button.setEnabled(False)
-            self.exusr_button.setVisible(False)
-
-            self.exit_button.setEnabled(True)
-            self.exit_button.setVisible(True)
-
-            self.start_button.setEnabled(True)
-            self.start_button.setVisible(True)
-
-            self.stop_button.setEnabled(True)
-            self.stop_button.setVisible(True)
+            self.global_enable_btns(True)
             self.current_user = nick
             self.info_label.setText(MorusGUI.INFO_TEXT_USER.format(nick))
 
         if (new_state == UIState.NO_USER):
             self.current_user = None
             self.info_label.setText(MorusGUI.INFO_TEXT_INIT)
-            self.start_button.setEnabled(False)
-            self.start_button.setVisible(False)
+            self.global_enable_btns(False)
 
-            self.stop_button.setEnabled(False)
-            self.stop_button.setVisible(False)
+    def global_enable_btns(self, enable):
+        """
+        Set global button properties.
+        """
 
-            self.register_button.setEnabled(True)
-            self.register_button.setVisible(True)
+        self.register_button.setEnabled(not enable)
+        self.register_button.setVisible(not enable)
 
-            self.exusr_button.setEnabled(True)
-            self.exusr_button.setVisible(True)
+        self.exusr_button.setEnabled(not enable)
+        self.exusr_button.setVisible(not enable)
 
-            self.exit_button.setEnabled(False)
-            self.exit_button.setVisible(False)
-            
+        self.exit_button.setEnabled(enable)
+        self.exit_button.setVisible(enable)
+
+        self.start_button.setEnabled(enable)
+        self.start_button.setVisible(enable)
+
+        self.stop_button.setEnabled(enable)
+        self.stop_button.setVisible(enable)
 
     def start_btn_callback(self):
         """
@@ -193,3 +187,10 @@ class MorusGUI(QWidget):
 
         if ok and user:
             self.set_UI_state(UIState.USER_REGISTERED, user)
+
+    def exit_btn_callback(self):
+        """
+        Logout current user.
+        """
+        self.set_UI_state(UIState.NO_USER)
+
