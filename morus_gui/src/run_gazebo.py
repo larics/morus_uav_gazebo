@@ -23,14 +23,17 @@ class RunGazeboSimulator(QThread):
         self.wait()
 
     def start_simulation(self):
+        print("Inside process: Starting Simulation")
         self.launch_sim.start()
         
         try:
             self.launch_sim.spin()
         except:
+            print("Inside prcoess: Exception occured")
             pass
 
-        self.launch_sim.shutdown() 
+        print("Inside process: Shutting down roslaunch")
+        self.launch_sim.shutdown()
 
     def stop_simlation(self):
         self.sim_process.terminate()
