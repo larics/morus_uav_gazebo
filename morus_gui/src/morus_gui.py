@@ -8,12 +8,13 @@ import rospkg
 
 from run_gazebo import RunGazeboSimulator
 from register_dialog import RegisterUser
+from score_tracker import ScoreTracker
 
 class UIState():
     NO_USER = 0
     USER_REGISTERED = 1
 
-class MorusGUI(QtWidgets.QWidget):
+class MorusGUI(QWidget):
     
     INFO_TEXT_INIT = "Please register before playing"
     DEFAULT_BTN_WIDTH = 200
@@ -26,7 +27,8 @@ class MorusGUI(QtWidgets.QWidget):
         self.setupUI()
         self.setupCallbacks()
         self.current_state = UIState.NO_USER
-        
+        self.score_tracker = ScoreTracker()
+
     def setupCallbacks(self):
         """
         Setup all needed callbacks for GUI objects.
@@ -85,7 +87,20 @@ class MorusGUI(QtWidgets.QWidget):
 
         dialog_box = RegisterUser()
         if dialog_box.exec_():
-            pass
+            
+            if not self.score_tracker.add_initial_entry(
+                dialog_box.nickname,
+                dialog_box.first_name,
+                dialog_box.last_name):
+
+                msg = QMessageBox()
+                msg.setIcon(QMessageBox.Critical)
+                msg.setText("Registration error")
+                msg.setInformativeText(
+                    "User with nickname {} already exists, please chose a different nickname.".format(
+                        dialog_box.nickname))
+                msg.setWindowTitle("Error")
+                msg.exec_()
 
     def start_btn_callback(self):
         """

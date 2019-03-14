@@ -40,8 +40,8 @@ class RegisterUser(QDialog):
         if not self.nickname or not self.first_name or not self.last_name:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Critical)
-            msg.setText("Resigtration error")
-            msg.setInformativeText('Please fully complete user registration')
+            msg.setText("Registration error")
+            msg.setInformativeText('Please fully complete user registration form!')
             msg.setWindowTitle("Error")
             msg.exec_()
         else:
