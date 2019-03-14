@@ -39,3 +39,4 @@ CATKIN_IGNORE
 #Python stuff
 *.pyc
 .idea
+/morus_gui/resources/*_score.yaml
