@@ -17,6 +17,7 @@ class UIState():
 class MorusGUI(QWidget):
     
     INFO_TEXT_INIT = "Please register before playing"
+    INFO_TEXT_USER = "Welcome {}!"
     DEFAULT_BTN_WIDTH = 200
     LAUNCH_FILE = "/launch/morus_multirotor_height_attitude_ctl.launch"
     PICTURE_FILE = "/resources/MORUS.png"
@@ -28,6 +29,7 @@ class MorusGUI(QWidget):
         self.setupCallbacks()
         self.current_state = UIState.NO_USER
         self.score_tracker = ScoreTracker()
+        self.current_user = None
 
     def setupCallbacks(self):
         """
@@ -37,6 +39,7 @@ class MorusGUI(QWidget):
         self.start_button.clicked.connect(self.start_btn_callback)
         self.stop_button.clicked.connect(self.stop_btn_callback)
         self.register_button.clicked.connect(self.register_btn_callback)
+        self.exusr_button.clicked.connect(self.exusr_btn_callback)
 
     def setupUI(self):
         """
@@ -45,11 +48,11 @@ class MorusGUI(QWidget):
 
         # Create all buttons
         self.register_button = QPushButton("New User")
+        self.exusr_button = QPushButton("Existing User")
         self.start_button = QPushButton("Start")
-        self.start_button.setEnabled(False)
         self.stop_button = QPushButton("Stop")
-        self.stop_button.setEnabled(False)
-        
+        self.exit_button = QPushButton("Logout")       
+
         # Create a visual label
         rospack = rospkg.RosPack()
         path = rospack.get_path("morus_gui")
@@ -67,13 +70,20 @@ class MorusGUI(QWidget):
         self.info_label.setFont(newfont)
         self.info_label.setText(MorusGUI.INFO_TEXT_INIT)
 
+        btn_layout = QHBoxLayout()
+        btn_layout.addWidget(self.register_button)
+        btn_layout.addWidget(self.exusr_button)
+
         # Setup vertical layout
         layout = QVBoxLayout()
         layout.addWidget(logo_label)
         layout.addWidget(self.info_label)
-        layout.addWidget(self.register_button)
+        layout.addLayout(btn_layout)
         layout.addWidget(self.start_button)
         layout.addWidget(self.stop_button)
+        layout.addWidget(self.exit_button)
+
+        self.set_UI_state(UIState.NO_USER)
 
         self.setLayout(layout)
         self.setGeometry(300, 300, 250, 150)
@@ -101,6 +111,48 @@ class MorusGUI(QWidget):
                         dialog_box.nickname))
                 msg.setWindowTitle("Error")
                 msg.exec_()
+            
+            else:
+                self.set_UI_state(UIState.USER_REGISTERED, dialog_box.nickname)
+
+    def set_UI_state(self, new_state, nick=None):
+
+        if (new_state == UIState.USER_REGISTERED):
+            self.register_button.setEnabled(False)
+            self.register_button.setVisible(False)
+
+            self.exusr_button.setEnabled(False)
+            self.exusr_button.setVisible(False)
+
+            self.exit_button.setEnabled(True)
+            self.exit_button.setVisible(True)
+
+            self.start_button.setEnabled(True)
+            self.start_button.setVisible(True)
+
+            self.stop_button.setEnabled(True)
+            self.stop_button.setVisible(True)
+            self.current_user = nick
+            self.info_label.setText(MorusGUI.INFO_TEXT_USER.format(nick))
+
+        if (new_state == UIState.NO_USER):
+            self.current_user = None
+            self.info_label.setText(MorusGUI.INFO_TEXT_INIT)
+            self.start_button.setEnabled(False)
+            self.start_button.setVisible(False)
+
+            self.stop_button.setEnabled(False)
+            self.stop_button.setVisible(False)
+
+            self.register_button.setEnabled(True)
+            self.register_button.setVisible(True)
+
+            self.exusr_button.setEnabled(True)
+            self.exusr_button.setVisible(True)
+
+            self.exit_button.setEnabled(False)
+            self.exit_button.setVisible(False)
+            
 
     def start_btn_callback(self):
         """
@@ -129,3 +181,15 @@ class MorusGUI(QWidget):
         self.workThread.stop_simlation()
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)
+
+    def exusr_btn_callback(self):
+        """
+        Generate existing user form.
+        """
+
+        usr_list = self.score_tracker.get_user_list()
+        user, ok = QInputDialog.getItem(self, "Select Existing User", 
+         "List of Existing Users", usr_list, 0, False)
+
+        if ok and user:
+            self.set_UI_state(UIState.USER_REGISTERED, user)

@@ -98,3 +98,11 @@ class ScoreTracker():
             raise Exception("Given score and nickname pair is not found in the scoring list.")
 
         self.write_yaml()
+
+    def get_user_list(self):
+
+        usr_list = []
+        for item in self.scoring_list:
+            usr_list.append(item[ScoreTracker.NICK_KEY])
+
+        return usr_list
