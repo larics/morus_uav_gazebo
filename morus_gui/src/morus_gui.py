@@ -19,7 +19,8 @@ class MorusGUI(QWidget):
     INFO_TEXT_INIT = "Please register before playing"
     INFO_TEXT_USER = "Welcome {}!"
     DEFAULT_BTN_WIDTH = 200
-    LAUNCH_FILE = "/launch/morus_multirotor_height_attitude_ctl.launch"
+    PACKAGE = "morus_gui"
+    LAUNCH_FILE = "/launch/drone_days.launch"
     PICTURE_FILE = "/resources/MORUS.png"
 
     def __init__(self):
@@ -158,7 +159,7 @@ class MorusGUI(QWidget):
         """
 
         rospack = rospkg.RosPack()
-        path = rospack.get_path("morus_gazebo")
+        path = rospack.get_path(MorusGUI.PACKAGE)
         launch_path = path + MorusGUI.LAUNCH_FILE
 
         self.workThread = RunGazeboSimulator(launch_path)
