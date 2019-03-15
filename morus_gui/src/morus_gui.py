@@ -9,7 +9,7 @@ import rospkg
 from run_gazebo import RunGazeboSimulator
 from register_dialog import RegisterUser
 from score_tracker import ScoreTracker
-from game_loop import LoopDialog
+from game_dialog import LoopDialog
 
 class UIState():
     NO_USER = 0
@@ -169,10 +169,15 @@ class MorusGUI(QWidget):
         self.stop_button.setEnabled(True)
 
 
-        # Start the LoopDialog
+        # Start the LoopDialog - Disable main window functionality
         loop_dialog = LoopDialog()
+        loop_dialog.setWindowModality(Qt.ApplicationModal)
+        self.setEnabled(False)
+
         if loop_dialog.exec_():
             self.stop_btn_callback()
+
+        self.setEnabled(True)
 
     def stop_btn_callback(self):
         """
@@ -181,6 +186,10 @@ class MorusGUI(QWidget):
         """
 
         self.workThread.stop_simlation()
+
+        if self.workThread.isRunning():
+            self.workThread.terminate()
+
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)
 
@@ -201,4 +210,3 @@ class MorusGUI(QWidget):
         Logout current user.
         """
         self.set_UI_state(UIState.NO_USER)
-
