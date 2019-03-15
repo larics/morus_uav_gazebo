@@ -174,8 +174,10 @@ class MorusGUI(QWidget):
         self.setEnabled(False)
 
         if loop_dialog.exec_():
-            self.stop_btn_callback()
+            # Record score from here
+            pass
 
+        self.stop_btn_callback()
         self.setEnabled(True)
 
     def stop_btn_callback(self):
