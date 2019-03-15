@@ -30,9 +30,7 @@ class LoopMonitor(QObject):
         will be made only through signals.
         """
         print("Inside loop monitor thread")
-        
-    def __del__(self):
-        self.wait()
+        self.external_enable = True
 
     def initialize_node(self):
         """
@@ -58,9 +56,13 @@ class LoopMonitor(QObject):
         self.initialize_node()
         
         print("LoopThread: Starting node")
-        while not rospy.is_shutdown() and not self.running_status == LoopMonitor.FINISHED:
+        while \
+            not rospy.is_shutdown() and \
+            not self.running_status == LoopMonitor.FINISHED and \
+            self.external_enable:
+
             print("LoopThread: Node spinning")
-            rospy.sleep(0.5)
+            rospy.sleep(0.01)
             print(self.running_status, self.dist, self.time)
 
             self.status_signal.emit(
@@ -71,6 +73,9 @@ class LoopMonitor(QObject):
                 float(self.time))
 
         print("LoopThread: Node finished")
+
+    def stop_node(self):
+        self.external_enable = False
 
     def status_callback(self, msg):
         self.running_status = msg.data
