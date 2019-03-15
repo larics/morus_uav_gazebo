@@ -171,7 +171,6 @@ class MorusGUI(QWidget):
 
         # Start the LoopDialog - Disable main window functionality
         loop_dialog = LoopDialog()
-        loop_dialog.setWindowModality(Qt.ApplicationModal)
         self.setEnabled(False)
 
         if loop_dialog.exec_():

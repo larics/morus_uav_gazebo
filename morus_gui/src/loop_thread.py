@@ -7,11 +7,8 @@ import rospy
 from std_msgs.msg import Int8, Float64
 
 import sys, time
-import multiprocessing as mp
-from multiprocessing import Process
 
-
-class LoopMonitorThread(QThread):
+class LoopMonitor(QObject):
     """
     This class implements a QThread class. Its main task is to run
     a ROS node used to monitor game activities and emit signals back towards
@@ -26,27 +23,16 @@ class LoopMonitorThread(QThread):
     dist_signal = pyqtSignal(float)
     time_signal = pyqtSignal(float)
 
-    def __init__(self, dialog):
+    def __init__(self):
+        super(self.__class__, self).__init__()
         """
         Initialize all the signals for this thread. Communication to outside
         will be made only through signals.
         """
-
-        super(self.__class__, self).__init__()
         print("Inside loop monitor thread")
-        self.dialog = dialog
         
     def __del__(self):
         self.wait()
-
-    def run(self):
-        """
-        Initialize and run the QThread tasks.
-        First initializes and starts the node.
-        """
-        
-        self.node_process = Process(target=self.start_node)
-        self.node_process.start()
 
     def initialize_node(self):
         """
@@ -72,7 +58,7 @@ class LoopMonitorThread(QThread):
         self.initialize_node()
         
         print("LoopThread: Starting node")
-        while not rospy.is_shutdown() and not self.running_status == LoopMonitorThread.FINISHED:
+        while not rospy.is_shutdown() and not self.running_status == LoopMonitor.FINISHED:
             print("LoopThread: Node spinning")
             rospy.sleep(0.5)
             print(self.running_status, self.dist, self.time)
@@ -85,10 +71,6 @@ class LoopMonitorThread(QThread):
                 float(self.time))
 
         print("LoopThread: Node finished")
-
-    def stop_node(self):
-        self.node_process.terminate()
-        self.node_process.join()
 
     def status_callback(self, msg):
         self.running_status = msg.data
