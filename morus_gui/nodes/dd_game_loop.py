@@ -30,6 +30,7 @@ class GameNode():
 		
 		self.initial_x = 0
 		self.initial_y = 0
+		self.initial_z = 0
 		self.x_mv = 0
 		self.y_mv = 0
 
@@ -61,16 +62,19 @@ class GameNode():
 			self.first_post = True
 			self.initial_x = data.point.x
 			self.initial_y = data.point.y
+			self.initial_z = data.point.z
 
 		self.x_mv = data.point.x
 		self.y_mv = data.point.y
+		self.z_mv = data.point.z
 
 		#  Check if started moving
 		if not self.started_moving:
 			
 			init_dist = sqrt( 
 				(self.x_mv - self.initial_x)**2 +  
-				(self.y_mv - self.initial_y)**2 ) 
+				(self.y_mv - self.initial_y)**2 + 
+				(self.z_mv - self.initial_z)**2 ) 
 			if init_dist > 1e-1:
 				self.started_moving = True
 				self.game_running = True
