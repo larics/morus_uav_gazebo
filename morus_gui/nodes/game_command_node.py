@@ -58,7 +58,7 @@ class Commander():
         cmd_position.z = self.UAV_pose.point.z+10*data.linear.z #5ms for 20Hz
         cmd_position.z = saturation(cmd_position.z, Commander.MIN_HEIGHT, Commander.MAX_HEIGHT)
         self.pub2.publish(cmd_position)
-            class LocalProcessor extends Processor {
+
     def position_callback(self,data):
         self.UAV_pose = data
     
