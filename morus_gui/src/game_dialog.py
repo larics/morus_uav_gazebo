@@ -22,6 +22,12 @@ class LoopDialog(QDialog):
         super(self.__class__, self).__init__()
         self.setupUI()
         self.setupCallbacks()
+
+        self.monitor = LoopMonitor()
+        self.monitor.status_signal.connect(self.updateGameStatus)
+        self.monitor.dist_signal.connect(self.updateDistance)
+        self.monitor.time_signal.connect(self.updateTime)
+        
         
     def setupCallbacks(self):
         self.p_button.clicked.connect(self.run_loop)
@@ -92,13 +98,8 @@ class LoopDialog(QDialog):
 
         self.quit_button.setEnabled(False)
         self.quit_button.setVisible(False)
-        
+
         self.info_label.setText("Game starting...")
-        
-        self.monitor = LoopMonitor()
-        self.monitor.status_signal.connect(self.updateGameStatus)
-        self.monitor.dist_signal.connect(self.updateDistance)
-        self.monitor.time_signal.connect(self.updateTime)
         self.monitor.start_node()     
 
     def record_btn_callback(self):
