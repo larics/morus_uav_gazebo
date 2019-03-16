@@ -23,10 +23,10 @@ class GameNode():
     RUNNING = 2
     FINISHED = 3
 
-    INIT_TOL = 1e-1
+    INIT_TOL = 0.5
     TARGET_TOL = 3
 
-    MAX_ANGULAR_VEL = 15
+    MAX_ANGULAR_VEL = 13.5
     MAX_LINEAR_VEL = 8
 
     def __init__(self):
