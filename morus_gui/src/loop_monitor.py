@@ -4,7 +4,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 import rospy
-from std_msgs.msg import Int8, Float64
+from std_msgs.msg import Int8, Float64, Bool
+from std_srvs.srv import Empty
 
 import sys, time
 
@@ -45,25 +46,23 @@ class LoopMonitor(QObject):
         rospy.Subscriber("/game_loop/running", Int8, self.status_callback)
         rospy.Subscriber("/game_loop/distance", Float64, self.distance_callback)
         rospy.Subscriber("/game_loop/elapsed_time", Float64, self.time_callback)
-
-
+      
     def start_node(self):
         """
         Start the main node loop. Emit Monitor information back to the main thread.
         """
         
-        print("LoopThread: Initializing node")
+        print("LoopMonitor: Initializing node")
         self.initialize_node()
         
-        print("LoopThread: Starting node")
+        print("LoopMonitor: Starting node")
         while \
             not rospy.is_shutdown() and \
             not self.running_status == LoopMonitor.FINISHED and \
             self.external_enable:
 
-            print("LoopThread: Node spinning")
             rospy.sleep(0.01)
-            print(self.running_status, self.dist, self.time)
+            #print(self.running_status, self.dist, self.time)
 
             self.status_signal.emit(
                 int(self.running_status))
@@ -72,7 +71,10 @@ class LoopMonitor(QObject):
             self.time_signal.emit(
                 float(self.time))
 
-        print("LoopThread: Node finished")
+        print("LoopMonitor: Pausing Simulation")
+        service_call = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
+        service_call()
+        print("LoopMonitor: Node finished")
 
     def stop_node(self):
         self.external_enable = False

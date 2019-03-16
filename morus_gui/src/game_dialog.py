@@ -115,19 +115,19 @@ class LoopDialog(QDialog):
 
     @pyqtSlot(float)
     def updateDistance(self, arg1):
-        print("LoopDialog: Update distance")
+        # print("LoopDialog: Update distance")
         self.dist_label.setText("{0:.2f} m".format(arg1))
         self.refresh_ui()
 
     @pyqtSlot(float)
     def updateTime(self, arg1):
-        print("LoopDialog: Update time")
+        # print("LoopDialog: Update time")
         self.time_label.setText("{0:.2f} s".format(arg1))
         self.refresh_ui()
 
     @pyqtSlot(int)
     def updateGameStatus(self, arg1):
-        print("LoopDialog: Update Game")
+        # print("LoopDialog: Update Game")
         if arg1 == LoopMonitor.NOT_RUNNING:
             self.info_label.setText(LoopDialog.NOT_RUNNING_MSG)
 
