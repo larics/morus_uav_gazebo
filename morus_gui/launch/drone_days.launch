@@ -1,6 +1,6 @@
 <launch>
 	<include file="$(find morus_gazebo)/launch/morus_multirotor_height_attitude_ctl.launch"/>
-	<include file="$(find morus_joy)/launch/morus_joy_teleop.launch"/>
+	<include file="$(find morus_gui)/launch/game_teleop.launch"/>
 
 	<node pkg="morus_gui" name="game_loop" type="dd_game_loop.py" output="screen"/>
 </launch>
