@@ -46,7 +46,7 @@ class Commander():
         
         # Don't do anything if game is not running
         if not self.game_status == 2:
-            continue
+            return
 
         cmd_roll_pitch_yaw = Vector3()
         cmd_roll_pitch_yaw.x=data.linear.x
