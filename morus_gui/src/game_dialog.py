@@ -63,9 +63,7 @@ class LoopDialog(QDialog):
         self.record_button = QPushButton("Save Score")
         self.quit_button = QPushButton("Quit")
         self.record_button.setEnabled(False)
-        self.quit_button.setEnabled(False)
         self.record_button.setVisible(False)
-        self.quit_button.setVisible(False)
         btn_layout.addWidget(self.record_button)
         btn_layout.addWidget(self.quit_button)
 
@@ -91,6 +89,10 @@ class LoopDialog(QDialog):
     def run_loop(self):
         self.p_button.setEnabled(False)
         self.p_button.setVisible(False)
+
+        self.quit_button.setEnabled(False)
+        self.quit_button.setVisible(False)
+        
         self.info_label.setText("Game starting...")
         
         self.monitor = LoopMonitor()
