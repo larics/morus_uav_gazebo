@@ -11,7 +11,9 @@ from loop_monitor import LoopMonitor
 class LoopDialog(QDialog):
     """
     This class implements QDialog functionality. It shows the user 
-    currently available game information and score
+    currently available game information and score. Also providing
+    options to start or quit the game as well as save the achieved
+    score.
     """
 
     NOT_RUNNING_MSG = "Move the UAV to start the game"
@@ -30,11 +32,19 @@ class LoopDialog(QDialog):
         
         
     def setupCallbacks(self):
+        """
+        Setup all callbacks for UI elements.
+        """
+
         self.p_button.clicked.connect(self.run_loop)
         self.record_button.clicked.connect(self.record_btn_callback)
         self.quit_button.clicked.connect(self.quit_btn_callback)
 
     def setupUI(self):
+        """
+        Setup visual UI elements with no funcitonality.
+        """
+
         self.info_label = QLabel("Press play when ready")
         newfont = QtGui.QFont("Aerial", 15, QtGui.QFont.Bold) 
         self.info_label.setFont(newfont)
@@ -85,14 +95,18 @@ class LoopDialog(QDialog):
         self.setLayout(v_layout)
         self.setGeometry(300, 300, 250, 150)
         self.setWindowTitle("Game Loop")
-        # enable custom window hint
+        
+        # Disable the exit button
         self.setWindowFlags(self.windowFlags() | QtCore.Qt.CustomizeWindowHint)
-
-        # disable (but not hide) close button
         self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowCloseButtonHint)
+        
         self.show()
 
     def run_loop(self):
+        """
+        Run the game loop by starting the loop_monitor node. 
+        """
+
         self.p_button.setEnabled(False)
         self.p_button.setVisible(False)
 
@@ -103,14 +117,26 @@ class LoopDialog(QDialog):
         self.monitor.start_node()     
 
     def record_btn_callback(self):
+        """
+        Record player achieved score when the game finishes
+        """
+
         self.monitor.stop_node()
         self.accept()
 
     def quit_btn_callback(self):
+        """
+        Close the game.
+        """
+
         self.monitor.stop_node()
         self.close()
 
     def keyPressEvent(self, event):
+        """
+        Disable exiting the QDialog when pressing escape key
+        """
+
         key = event.key()
         if key == Qt.Key_Escape:
             # Don't close on escape
@@ -148,7 +174,10 @@ class LoopDialog(QDialog):
         self.refresh_ui()
 
     def refresh_ui(self):
-        self.update()
+        """
+        Refresh the UI elements by repainting and adjusting size.
+        """
+
         self.repaint()
         self.adjustSize()
     

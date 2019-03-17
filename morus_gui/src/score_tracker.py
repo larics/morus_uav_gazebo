@@ -100,6 +100,9 @@ class ScoreTracker():
         self.write_yaml()
 
     def get_user_list(self):
+        """
+        Get list of available users.
+        """
 
         usr_list = []
         for item in self.scoring_list:

@@ -78,16 +78,21 @@ class LoopMonitor(QObject):
         service_call()
         print("LoopMonitor: Node finished")
 
-    def publish_teleop_status(self, status):
-        msg = Bool()
-        msg.data = status
-        self.start_teleop_pub.publish(msg)
-
+   
     def stop_node(self):
+        """
+        Perform all actions requiref dor stoping the node
+        """
+
         self.external_enable = False
         self.publish_teleop_status(False)
         self.status_signal.emit(
             int(LoopMonitor.FINISHED))
+
+    def publish_teleop_status(self, status):
+        msg = Bool()
+        msg.data = status
+        self.start_teleop_pub.publish(msg)
 
     def status_callback(self, msg):
         self.running_status = msg.data
