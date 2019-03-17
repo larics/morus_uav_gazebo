@@ -16,18 +16,25 @@ class GameNode():
     from the goal, and measure time from the moment the UAV starts moving.
     """
 
+    # Target UAV position
     TARGET_X = -17.2652
     TARGET_Y = -24.7699
 
+    # Game status flags
     NOT_RUNNING = 1
     RUNNING = 2
     FINISHED = 3
 
+    # Position tolerances
     INIT_TOL = 0.5
     TARGET_TOL = 3
 
+    # Max velocities before stopping simulation
     MAX_ANGULAR_VEL = 13.5
     MAX_LINEAR_VEL = 8
+
+    # Total play-time available
+    TOTAL_TIME = 300
 
     def __init__(self):
 
@@ -46,12 +53,14 @@ class GameNode():
         self.elapsed_time = 0
         self.last_time = -1 
 
+        self.distance_to_target = None
+
         rospy.Subscriber("morus/position", PointStamped, self.position_callback)
         rospy.Subscriber("morus/imu", Imu, self.imu_callback)
-        rospy.Subscriber("morus/velovity", TwistStamped, self.vel_callback)
+        rospy.Subscriber("morus/velocity", TwistStamped, self.vel_callback)
         self.game_status = rospy.Publisher("game_loop/running", Int8, queue_size=1) 
         self.distance_pub = rospy.Publisher("game_loop/distance", Float64, queue_size=1)
-        self.time_pub = rospy.Publisher("game_loop/elapsed_time", Float64, queue_size=1)
+        self.time_pub = rospy.Publisher("game_loop/remaining_time", Float64, queue_size=1)
 
     def checkIfMoving(self):
         """
@@ -92,7 +101,7 @@ class GameNode():
 
         # Publish elapsed time
         timeMsg = Float64()
-        timeMsg.data = self.elapsed_time
+        timeMsg.data = GameNode.TOTAL_TIME - self.elapsed_time
         self.time_pub.publish(timeMsg)
 
         # Publish distance to goal
@@ -100,7 +109,7 @@ class GameNode():
             (self.x_mv - GameNode.TARGET_X)**2 +
             (self.y_mv - GameNode.TARGET_Y)**2 )
         newMsg = Float64()
-        newMsg.data = distance
+        newMsg.data = self.distance_to_target - distance
         self.distance_pub.publish(newMsg)
 
         # Stop the game if target is reached
@@ -168,6 +177,11 @@ class GameNode():
             self.initial_x = data.point.x
             self.initial_y = data.point.y
             self.initial_z = data.point.z
+
+            self.distance_to_target = sqrt(
+                (self.initial_x - GameNode.TARGET_X) ** 2 +
+                (self.initial_y - GameNode.TARGET_Y)
+                )
 
         self.x_mv = data.point.x
         self.y_mv = data.point.y
