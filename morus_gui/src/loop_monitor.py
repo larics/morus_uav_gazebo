@@ -45,7 +45,7 @@ class LoopMonitor(QObject):
         rospy.init_node("game_monitor")
         rospy.Subscriber("/game_loop/running", Int8, self.status_callback)
         rospy.Subscriber("/game_loop/distance", Float64, self.distance_callback)
-        rospy.Subscriber("/game_loop/elapsed_time", Float64, self.time_callback)
+        rospy.Subscriber("/game_loop/remaining_time", Float64, self.time_callback)
       
     def start_node(self):
         """
