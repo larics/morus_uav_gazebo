@@ -84,8 +84,10 @@ class LoopMonitor(QObject):
         self.start_teleop_pub.publish(msg)
 
     def stop_node(self):
-        self.publish_teleop_status(False)
         self.external_enable = False
+        self.publish_teleop_status(False)
+        self.status_signal.emit(
+            int(LoopMonitor.FINISHED))
 
     def status_callback(self, msg):
         self.running_status = msg.data
@@ -95,3 +97,7 @@ class LoopMonitor(QObject):
 
     def time_callback(self, msg):
         self.time = msg.data
+
+        # Stop the game if time runs out
+        if self.time <= 0:
+            self.stop_node()
