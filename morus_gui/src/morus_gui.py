@@ -119,6 +119,9 @@ class MorusGUI(QWidget):
                 self.set_UI_state(UIState.USER_REGISTERED, dialog_box.nickname)
 
     def set_UI_state(self, new_state, nick=None):
+        """
+        Change the UI state if the user is registered.
+        """
 
         if (new_state == UIState.USER_REGISTERED):
             self.global_enable_btns(True)
@@ -200,6 +203,17 @@ class MorusGUI(QWidget):
         """
 
         usr_list = self.score_tracker.get_user_list()
+
+        # Check if registered users exist
+        if len(usr_list) == 0:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Critical)
+            msg.setText("Registration error")
+            msg.setInformativeText("There are no registered users today. Please register first!")
+            msg.setWindowTitle("Error")
+            msg.exec_()
+            return
+
         user, ok = QInputDialog.getItem(self, "Select Existing User", 
          "List of Existing Users", usr_list, 0, False)
 
