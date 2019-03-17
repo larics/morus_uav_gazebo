@@ -50,9 +50,9 @@ class LoopDialog(QDialog):
         self.time_label.setFixedWidth(100)
         self.dist_label.setFixedWidth(100)
 
-        t_label = QLabel("Elapsed time: ")
+        t_label = QLabel("Time remaining: ")
         t_label.setFont(labelfont)
-        d_label = QLabel("Distance to target: ")
+        d_label = QLabel("Achieved distance: ")
         d_label.setFont(labelfont)
         
         t_layout = QHBoxLayout()

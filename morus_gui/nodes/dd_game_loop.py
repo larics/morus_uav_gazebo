@@ -87,7 +87,6 @@ class GameNode():
             self.pub_game_status(GameNode.RUNNING)
 
         else:
-            print("GameNode: Game start not detected")
             self.pub_game_status(GameNode.NOT_RUNNING)
 
     def gameRunningActivities(self):
@@ -180,7 +179,7 @@ class GameNode():
 
             self.distance_to_target = sqrt(
                 (self.initial_x - GameNode.TARGET_X) ** 2 +
-                (self.initial_y - GameNode.TARGET_Y)
+                (self.initial_y - GameNode.TARGET_Y) ** 2
                 )
 
         self.x_mv = data.point.x
@@ -210,7 +209,7 @@ if __name__ == '__main__':
     rospy.init_node("game_loop_node")
     game_node = GameNode()
 
-    print("GameNode: Starting")
+    print("GameNode: Game loop starting...")
     while not game_node.status == GameNode.FINISHED and not rospy.is_shutdown():
         rospy.sleep(0.1)
         game_node.run_once()
