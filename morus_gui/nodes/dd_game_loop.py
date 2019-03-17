@@ -2,7 +2,7 @@
 
 import rospy
 from geometry_msgs.msg import PointStamped
-from std_msgs.msg import Float64, Int8
+from std_msgs.msg import Float64, Int8, Bool
 from std_srvs.srv import Empty
 from sensor_msgs.msg import Imu
 from geometry_msgs.msg import TwistStamped
@@ -43,6 +43,7 @@ class GameNode():
         self.first_position_set = False
         self.started_moving = False
         self.game_running = False
+        self.force_stop = False
 
         self.initial_x = 0
         self.initial_y = 0
@@ -58,6 +59,8 @@ class GameNode():
         rospy.Subscriber("morus/position", PointStamped, self.position_callback)
         rospy.Subscriber("morus/imu", Imu, self.imu_callback)
         rospy.Subscriber("morus/velocity", TwistStamped, self.vel_callback)
+        rospy.Subscriber("/game_loop/force_stop", Bool, self.stop_callback)
+
         self.game_status = rospy.Publisher("game_loop/running", Int8, queue_size=1) 
         self.distance_pub = rospy.Publisher("game_loop/distance", Float64, queue_size=1)
         self.time_pub = rospy.Publisher("game_loop/remaining_time", Float64, queue_size=1)
@@ -123,6 +126,11 @@ class GameNode():
         """
         Run game loop once.
         """
+
+        # Check if force stop, publish game finished and return 
+        if self.force_stop:
+            self.pub_game_status(GameNode.FINISHED)
+            return 
 
         # UAV is not moving, game not started
         if not self.started_moving and not self.game_running:
@@ -196,11 +204,15 @@ class GameNode():
         self.game_status.publish(gameMsg)
         self.status = status
 
+    def stop_callback(self, msg):
+        print("GameNode: Stop request recieved, stopping...")
+        self.force_stop = True
+        self.game_running = False
+
     def pauseSimulation(self):
         """
         Send request to pause simulation
         """
-
         print("GameLoopNode: Pausing Simulation")
         service_call = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
         service_call()  

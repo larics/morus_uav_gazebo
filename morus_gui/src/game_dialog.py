@@ -36,7 +36,7 @@ class LoopDialog(QDialog):
         Setup all callbacks for UI elements.
         """
 
-        self.p_button.clicked.connect(self.run_loop)
+        self.start_button.clicked.connect(self.run_loop)
         self.record_button.clicked.connect(self.record_btn_callback)
         self.quit_button.clicked.connect(self.quit_btn_callback)
 
@@ -51,13 +51,13 @@ class LoopDialog(QDialog):
         self.info_label.setAlignment(Qt.AlignCenter)
 
         labelfont = QtGui.QFont("Aerial", 13, QtGui.QFont.Bold)
-        self.time_label = QLabel()
+        self.remaining_time_label = QLabel()
         self.dist_label = QLabel()
 
-        self.time_label.setFont(labelfont)
+        self.remaining_time_label.setFont(labelfont)
         self.dist_label.setFont(labelfont)
 
-        self.time_label.setFixedWidth(100)
+        self.remaining_time_label.setFixedWidth(100)
         self.dist_label.setFixedWidth(100)
 
         t_label = QLabel("Time remaining: ")
@@ -67,7 +67,7 @@ class LoopDialog(QDialog):
         
         t_layout = QHBoxLayout()
         t_layout.addWidget(t_label)
-        t_layout.addWidget(self.time_label)
+        t_layout.addWidget(self.remaining_time_label)
         t_layout.setSpacing(50)
 
         d_layout = QHBoxLayout()
@@ -83,13 +83,13 @@ class LoopDialog(QDialog):
         btn_layout.addWidget(self.record_button)
         btn_layout.addWidget(self.quit_button)
 
-        self.p_button = QPushButton("Play")
+        self.start_button = QPushButton("Play")
 
         v_layout = QVBoxLayout()
         v_layout.addWidget(self.info_label)
         v_layout.addLayout(t_layout)
         v_layout.addLayout(d_layout)
-        v_layout.addWidget(self.p_button)
+        v_layout.addWidget(self.start_button)
         v_layout.addLayout(btn_layout)
 
         self.setLayout(v_layout)
@@ -107,8 +107,8 @@ class LoopDialog(QDialog):
         Run the game loop by starting the loop_monitor node. 
         """
 
-        self.p_button.setEnabled(False)
-        self.p_button.setVisible(False)
+        self.start_button.setEnabled(False)
+        self.start_button.setVisible(False)
 
         self.quit_button.setEnabled(False)
         self.quit_button.setVisible(False)
@@ -151,7 +151,7 @@ class LoopDialog(QDialog):
     @pyqtSlot(float)
     def updateTime(self, arg1):
         # print("LoopDialog: Update time")
-        self.time_label.setText("{0:.2f} s".format(arg1))
+        self.remaining_time_label.setText("{0:.2f} s".format(arg1))
         self.refresh_ui()
 
     @pyqtSlot(int)

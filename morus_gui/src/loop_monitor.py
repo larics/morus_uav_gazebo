@@ -30,7 +30,7 @@ class LoopMonitor(QObject):
         Initialize all the signals for this thread. Communication to outside
         will be made only through signals.
         """
-        print("Inside loop monitor thread")
+        print("LoopMonitor: Inside loop monitor constructor")
         self.external_enable = True
 
     def initialize_node(self):
@@ -39,8 +39,8 @@ class LoopMonitor(QObject):
         """
 
         self.running_status = -1
-        self.dist = -1
-        self.time = -1
+        self.achieved_distance = -1
+        self.remaining_time = -1
 
         self.start_teleop_pub = rospy.Publisher("/game_loop/teleop_status", Bool, queue_size=1)
         rospy.init_node("game_monitor")
@@ -65,18 +65,16 @@ class LoopMonitor(QObject):
             rospy.sleep(0.01)
             self.publish_teleop_status(True)
 
-            self.status_signal.emit(
-                int(self.running_status))
-            self.dist_signal.emit(
-                float(self.dist))
-            self.time_signal.emit(
-                float(self.time))
+            self.status_signal.emit(int(self.running_status))
+            self.dist_signal.emit(float(self.achieved_distance))
+            self.time_signal.emit(float(self.remaining_time))
 
         self.publish_teleop_status(False)
         print("LoopMonitor: Pausing Simulation")
         service_call = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
         service_call()
         print("LoopMonitor: Node finished")
+        #rospy.signal_shutdown("LoopMonitor shutting down")
 
    
     def stop_node(self):
@@ -84,8 +82,8 @@ class LoopMonitor(QObject):
         Perform all actions requiref dor stoping the node
         """
 
+        print("LoopMonitor: Stopping loop_monitor node")
         self.external_enable = False
-        self.publish_teleop_status(False)
         self.status_signal.emit(
             int(LoopMonitor.FINISHED))
 
@@ -98,11 +96,11 @@ class LoopMonitor(QObject):
         self.running_status = msg.data
 
     def distance_callback(self, msg):
-        self.dist = msg.data
+        self.achieved_distance = msg.data
 
     def time_callback(self, msg):
-        self.time = msg.data
+        self.remaining_time = msg.data
 
         # Stop the game if time runs out
-        if self.time <= 0:
+        if self.remaining_time <= 0:
             self.stop_node()
