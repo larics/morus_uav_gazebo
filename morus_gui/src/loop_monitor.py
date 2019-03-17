@@ -42,6 +42,7 @@ class LoopMonitor(QObject):
         self.dist = -1
         self.time = -1
 
+        self.start_teleop_pub = rospy.Publisher("/game_loop/teleop_status", Bool, queue_size=1)
         rospy.init_node("game_monitor")
         rospy.Subscriber("/game_loop/running", Int8, self.status_callback)
         rospy.Subscriber("/game_loop/distance", Float64, self.distance_callback)
@@ -62,7 +63,7 @@ class LoopMonitor(QObject):
             self.external_enable:
 
             rospy.sleep(0.01)
-            #print(self.running_status, self.dist, self.time)
+            self.publish_teleop_status(True)
 
             self.status_signal.emit(
                 int(self.running_status))
@@ -71,12 +72,19 @@ class LoopMonitor(QObject):
             self.time_signal.emit(
                 float(self.time))
 
+        self.publish_teleop_status(False)
         print("LoopMonitor: Pausing Simulation")
         service_call = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
         service_call()
         print("LoopMonitor: Node finished")
 
+    def publish_teleop_status(self, status):
+        msg = Bool()
+        msg.data = status
+        self.start_teleop_pub.publish(msg)
+
     def stop_node(self):
+        self.publish_teleop_status(False)
         self.external_enable = False
 
     def status_callback(self, msg):

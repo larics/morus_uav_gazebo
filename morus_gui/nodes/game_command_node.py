@@ -5,7 +5,7 @@ from geometry_msgs.msg import Vector3
 from geometry_msgs.msg import PointStamped
 from sensor_msgs.msg import Joy
 
-from std_msgs.msg import Int8
+from std_msgs.msg import Int8, Bool
 
 def saturation(value, min, max):
     if (value < min):
@@ -29,8 +29,8 @@ class Commander():
         # Initialize message variables.
 
         # Create a subscriber for color msg
-        self.game_status = -1
-        rospy.Subscriber("/game_loop/running", Int8, self.game_status_callback)
+        self.teleop_status = False
+        rospy.Subscriber("/game_loop/teleop_status", Bool, self.teleop_status_callback)
         rospy.Subscriber("cmd_vel", Twist, self.cmd_vel_callback)
         rospy.Subscriber("morus/position", PointStamped, self.position_callback)
         rate = rospy.Rate(1) # 1hz
@@ -38,14 +38,14 @@ class Commander():
         while not rospy.is_shutdown():
             rate.sleep()
 
-    def game_status_callback(self, msg):
-        self.game_status = msg.data
+    def teleop_status_callback(self, msg):
+        self.teleop_status = msg.data
 
     # Subscribe to teleop msgs
     def cmd_vel_callback(self,data):
         
         # Don't do anything if game is not running
-        if not self.game_status == 2:
+        if not self.teleop_status:
             return
 
         cmd_roll_pitch_yaw = Vector3()
