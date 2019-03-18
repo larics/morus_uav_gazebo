@@ -99,6 +99,13 @@ class ScoreTracker():
 
         self.write_yaml()
 
+    def get_sorted_score(self):
+        """
+        Return a sorted list of dictionary entries.
+        """
+
+        return sorted(self.scoring_list, key= lambda k : k[ScoreTracker.SCORE_KEY], reverse=True)
+
     def get_user_list(self):
         """
         Get list of available users.

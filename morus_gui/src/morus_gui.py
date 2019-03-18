@@ -12,6 +12,7 @@ from register_dialog import RegisterUser
 from score_tracker import ScoreTracker
 from game_dialog import LoopDialog
 from loop_monitor import LoopMonitor
+from highscore_dialog import HighscoreDialog
 
 class UIState():
     NO_USER = 0
@@ -45,6 +46,7 @@ class MorusGUI(QWidget):
         self.stop_button.clicked.connect(self.stop_btn_callback)
         self.register_button.clicked.connect(self.register_btn_callback)
         self.exusr_button.clicked.connect(self.exusr_btn_callback)
+        self.score_button.clicked.connect(self.score_btn_callback)
         self.exit_button.clicked.connect(self.exit_btn_callback)
 
     def setupUI(self):
@@ -57,6 +59,7 @@ class MorusGUI(QWidget):
         self.exusr_button = QPushButton("Existing User")
         self.start_button = QPushButton("Start")
         self.stop_button = QPushButton("Stop")
+        self.score_button = QPushButton("Highscores")
         self.exit_button = QPushButton("Logout")       
 
         # Create a visual label
@@ -87,6 +90,7 @@ class MorusGUI(QWidget):
         layout.addLayout(btn_layout)
         layout.addWidget(self.start_button)
         layout.addWidget(self.stop_button)
+        layout.addWidget(self.score_button)
         layout.addWidget(self.exit_button)
 
         self.setLayout(layout)
@@ -95,6 +99,14 @@ class MorusGUI(QWidget):
         self.show()
 
         self.set_UI_state(UIState.NO_USER)
+
+    def score_btn_callback(self):
+        """
+        Show Highscores window.
+        """
+
+        hs_dialog = HighscoreDialog(self.score_tracker)
+        hs_dialog.exec_()
 
     def register_btn_callback(self):
         """
