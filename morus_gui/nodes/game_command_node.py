@@ -19,7 +19,7 @@ class Commander():
     #carrot following controller for z axis requires knowing the position of the UAV 
     
     MIN_HEIGHT = 0.7
-    MAX_HEIGHT = 2.5
+    MAX_HEIGHT = 2.25
 
     def __init__(self):
         # Create a publisher for roll pitch yaw cmnds
