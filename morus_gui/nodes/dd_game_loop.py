@@ -181,8 +181,8 @@ class GameNode():
         # Check if first callback, record initial position
         if not self.first_position_set:
             self.first_position_set = True
-            self.initial_x = data.point.x + 5
-            self.initial_y = data.point.y + 5
+            self.initial_x = data.point.x
+            self.initial_y = data.point.y
             self.initial_z = data.point.z
 
             self.distance_to_target = sqrt(
