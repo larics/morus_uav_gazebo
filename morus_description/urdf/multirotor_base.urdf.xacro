@@ -272,4 +272,92 @@
     </gazebo>
   </xacro:macro>
 
+    <!-- Camera macro. Adds a box representing a camera below the UAV
+  
+  @param camera_link Length of the camera box
+  @param camera_mass Mass of the camera 
+  @param parent Parent link on which the camera will be fixed
+  @param *origin Block argument defining the origin of the camera with 
+  reference to the parent link.
+  @param *inertia Block argument defining camera inertia.
+  -->
+  <xacro:macro name="cam" params="camera_link camera_mass parent *origin *inertia">
+
+    <!-- Camera link -->
+    <link name="camera_box">
+
+      <!--collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="${camera_link} ${camera_link} ${camera_link}"/>
+        </geometry>
+      </collision-->
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="${camera_link} ${camera_link} ${camera_link}"/>
+        </geometry>
+        <material name="red"/>
+      </visual>
+
+      <inertial>
+        <mass value="${camera_mass}" />
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <xacro:insert_block name="inertia"/>
+      </inertial>
+
+    </link>
+
+    <!-- Camera joint with reference to the parent link -->
+    <joint name="camera_joint" type="fixed">
+      <xacro:insert_block name="origin"/>
+      <parent link="${parent}"/>
+      <child link="camera_box"/>
+    </joint>
+
+    <!-- camera -->
+    <gazebo reference="camera_box">
+      <sensor type="camera" name="camera1">
+        <update_rate>30.0</update_rate>
+
+        <camera name="head">
+          <horizontal_fov>1.3962634</horizontal_fov>
+          <image>
+            <width>800</width>
+            <height>800</height>
+            <format>R8G8B8</format>
+          </image>
+          <clip>
+            <near>0.02</near>
+            <far>300</far>
+          </clip>
+          <noise>
+            <type>gaussian</type>
+            <mean>0.0</mean>
+            <stddev>0.007</stddev>
+          </noise>
+        </camera>
+
+        <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>0.0</updateRate>
+          <cameraName>morus/camera1</cameraName>
+          <imageTopicName>image_raw</imageTopicName>
+          <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+          <frameName>camera_box</frameName>
+          <hackBaseline>0.07</hackBaseline>
+          <distortionK1>0.0</distortionK1>
+          <distortionK2>0.0</distortionK2>
+          <distortionK3>0.0</distortionK3>
+          <distortionT1>0.0</distortionT1>
+          <distortionT2>0.0</distortionT2>
+        </plugin>
+
+      </sensor>
+    </gazebo>
+
+  </xacro:macro>
+
+
 </robot>
