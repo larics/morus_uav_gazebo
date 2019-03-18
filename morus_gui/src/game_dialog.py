@@ -161,7 +161,7 @@ class LoopDialog(QDialog):
     @pyqtSlot(float)
     def updateDistance(self, arg1):
         if self.loop_monitor.running_status <= LoopMonitor.NOT_RUNNING:
-            self.dist_label.setText("Waiting to start...")
+            self.dist_label.setText("Wait...")
         else:
             self.dist_label.setText("{0:.2f} m".format(arg1))
 
