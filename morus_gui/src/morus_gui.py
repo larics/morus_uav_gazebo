@@ -5,11 +5,13 @@ from PyQt5.QtWidgets import *
 
 import sys
 import rospkg
+import rosnode
 
 from run_gazebo import RunGazeboSimulator
 from register_dialog import RegisterUser
 from score_tracker import ScoreTracker
 from game_dialog import LoopDialog
+from loop_monitor import LoopMonitor
 
 class UIState():
     NO_USER = 0
@@ -32,6 +34,7 @@ class MorusGUI(QWidget):
         self.current_state = UIState.NO_USER
         self.score_tracker = ScoreTracker()
         self.current_user = None
+        self.loop_monitor = LoopMonitor()
 
     def setupCallbacks(self):
         """
@@ -173,13 +176,14 @@ class MorusGUI(QWidget):
 
 
         # Start the LoopDialog - Disable main window functionality
-        loop_dialog = LoopDialog()
+        loop_dialog = LoopDialog(self.loop_monitor)
         self.setEnabled(False)
 
         if loop_dialog.exec_():
             # Record score from here
             pass
 
+        del loop_dialog
         self.stop_btn_callback()
         self.setEnabled(True)
 
@@ -194,6 +198,7 @@ class MorusGUI(QWidget):
         if self.workThread.isRunning():
             self.workThread.terminate()
 
+        rosnode.kill_nodes(["/gazebo", "/gazebo_gui"])
         self.start_button.setEnabled(True)
         self.stop_button.setEnabled(False)
 

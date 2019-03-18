@@ -20,17 +20,22 @@ class LoopDialog(QDialog):
     RUNNING_MSG = "Game started. Good luck!"
     FINISHED_MSG = "Game Over!"
     
-    def __init__(self):
+    def __init__(self, loop_monitor):
         super(self.__class__, self).__init__()
         self.setupUI()
         self.setupCallbacks()
 
-        self.monitor = LoopMonitor()
-        self.monitor.status_signal.connect(self.updateGameStatus)
-        self.monitor.dist_signal.connect(self.updateDistance)
-        self.monitor.time_signal.connect(self.updateTime)
+        self.loop_monitor = loop_monitor
+        self.loop_monitor.status_signal.connect(self.updateGameStatus)
+        self.loop_monitor.dist_signal.connect(self.updateDistance)
+        self.loop_monitor.time_signal.connect(self.updateTime)
         
-        
+    def __del__(self):
+        print("LoopDialog: Destructor called")
+        self.loop_monitor.status_signal.disconnect()
+        self.loop_monitor.dist_signal.disconnect()
+        self.loop_monitor.time_signal.disconnect()
+
     def setupCallbacks(self):
         """
         Setup all callbacks for UI elements.
@@ -114,14 +119,14 @@ class LoopDialog(QDialog):
         self.quit_button.setVisible(False)
 
         self.info_label.setText("Game starting...")
-        self.monitor.start_node()     
+        self.loop_monitor.start_node()     
 
     def record_btn_callback(self):
         """
         Record player achieved score when the game finishes
         """
 
-        self.monitor.stop_node()
+        self.loop_monitor.stop_node()
         self.accept()
 
     def quit_btn_callback(self):
@@ -129,7 +134,7 @@ class LoopDialog(QDialog):
         Close the game.
         """
 
-        self.monitor.stop_node()
+        self.loop_monitor.stop_node()
         self.close()
 
     def keyPressEvent(self, event):
@@ -150,7 +155,7 @@ class LoopDialog(QDialog):
 
     @pyqtSlot(float)
     def updateTime(self, arg1):
-        # print("LoopDialog: Update time")
+        print("LoopDialog: Update time")
         self.remaining_time_label.setText("{0:.2f} s".format(arg1))
         self.refresh_ui()
 

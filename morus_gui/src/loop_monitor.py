@@ -33,6 +33,12 @@ class LoopMonitor(QObject):
         print("LoopMonitor: Inside loop monitor constructor")
         self.external_enable = True
 
+        rospy.init_node("game_monitor")
+        self.start_teleop_pub = rospy.Publisher("/game_loop/teleop_status", Bool, queue_size=1)
+        rospy.Subscriber("/game_loop/running", Int8, self.status_callback)
+        rospy.Subscriber("/game_loop/distance", Float64, self.distance_callback)
+        rospy.Subscriber("/game_loop/remaining_time", Float64, self.time_callback)
+
     def initialize_node(self):
         """
         Initialize node subscribers.
@@ -41,13 +47,8 @@ class LoopMonitor(QObject):
         self.running_status = -1
         self.achieved_distance = -1
         self.remaining_time = -1
+        self.external_enable = True
 
-        self.start_teleop_pub = rospy.Publisher("/game_loop/teleop_status", Bool, queue_size=1)
-        rospy.init_node("game_monitor")
-        rospy.Subscriber("/game_loop/running", Int8, self.status_callback)
-        rospy.Subscriber("/game_loop/distance", Float64, self.distance_callback)
-        rospy.Subscriber("/game_loop/remaining_time", Float64, self.time_callback)
-      
     def start_node(self):
         """
         Start the main node loop. Emit Monitor information back to the main thread.
@@ -56,6 +57,10 @@ class LoopMonitor(QObject):
         print("LoopMonitor: Initializing node")
         self.initialize_node()
         
+        print("LoopMonitor: Is rospy shutdown? {}".format(rospy.is_shutdown()))
+        print("LoopMonitor: Is loop monitor finished? {}".format(self.running_status == LoopMonitor.FINISHED))
+        print("LoopMonitor: Is enabled? {}".format(self.external_enable))
+
         print("LoopMonitor: Starting node")
         while \
             not rospy.is_shutdown() and \
@@ -64,15 +69,21 @@ class LoopMonitor(QObject):
 
             rospy.sleep(0.01)
             self.publish_teleop_status(True)
-
+            print("LoopMonitor: Hello from loop")
             self.status_signal.emit(int(self.running_status))
             self.dist_signal.emit(float(self.achieved_distance))
             self.time_signal.emit(float(self.remaining_time))
 
+            print("\n\n")
+
+        try:
+            print("LoopMonitor: Trying to pause Simulation")
+            service_call = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
+            service_call()
+        except: 
+            print("LoopMonitor: Unable to pause Gazebo simulation")
+
         self.publish_teleop_status(False)
-        print("LoopMonitor: Pausing Simulation")
-        service_call = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
-        service_call()
         print("LoopMonitor: Node finished")
         #rospy.signal_shutdown("LoopMonitor shutting down")
 
@@ -96,6 +107,7 @@ class LoopMonitor(QObject):
         self.running_status = msg.data
 
     def distance_callback(self, msg):
+        print("LoopMonitor: Hello from callback")
         self.achieved_distance = msg.data
 
     def time_callback(self, msg):
