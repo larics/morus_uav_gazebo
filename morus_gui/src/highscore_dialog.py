@@ -37,10 +37,11 @@ class HighscoreDialog(QDialog):
         v_layout.addWidget(scroll_area)
 
         self.setLayout(v_layout)
-        self.setGeometry(300, 300, 250, 500)
+        self.adjustSize()
         self.setWindowTitle("Highscores")
 
         self.show()
+        self.scroll_layout.addStretch()
 
     def makeHorizontalLayout(self, index, item):
         """
@@ -50,14 +51,17 @@ class HighscoreDialog(QDialog):
         left_label = QLabel()
         left_label.setText("{0}. {1}".format(
             index+1, item[ScoreTracker.NICK_KEY]))
+        left_label.setFixedWidth(100)
+
         right_label = QLabel()
         right_label.setText("{0}".format(
             item[ScoreTracker.SCORE_KEY]))
+        right_label.setFixedWidth(100)
         
         layout = QHBoxLayout()
         layout.addWidget(left_label)
         layout.addWidget(right_label)
         layout.setSpacing(120)
-        layout.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        layout.setAlignment(Qt.AlignTop)
 
         return layout
