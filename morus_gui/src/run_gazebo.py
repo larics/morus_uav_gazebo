@@ -23,7 +23,7 @@ class RunGazeboSimulator(QThread):
         uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         roslaunch.configure_logging(uuid)
         self.launch_sim = roslaunch.parent.ROSLaunchParent(uuid, 
-        [path])
+            [path])
         
     def __del__(self):
         self.wait()

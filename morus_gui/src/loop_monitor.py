@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import *
 import rospy
 from std_msgs.msg import Int8, Float64, Bool
 from std_srvs.srv import Empty
+from sensor_msgs.msg import CompressedImage
 
 import sys, time
 
@@ -23,6 +24,7 @@ class LoopMonitor(QObject):
     status_signal = pyqtSignal(int)
     dist_signal = pyqtSignal(float)
     time_signal = pyqtSignal(float)
+    image_signal = pyqtSignal(bytes)
 
     DIST_FACTOR = 10
     TIME_FACTOR = 0.05
@@ -42,12 +44,14 @@ class LoopMonitor(QObject):
         rospy.Subscriber("/game_loop/running", Int8, self.status_callback)
         rospy.Subscriber("/game_loop/distance", Float64, self.distance_callback)
         rospy.Subscriber("/game_loop/remaining_time", Float64, self.time_callback)
+        rospy.Subscriber("/morus/camera1/image_raw/compressed", CompressedImage, self.image_callback)
 
     def initialize_node(self):
         """
         Initialize node subscribers.
         """
 
+        self.image = bytes()
         self.running_status = -1
         self.achieved_distance = 0
         self.remaining_time = 0
@@ -77,6 +81,7 @@ class LoopMonitor(QObject):
             self.status_signal.emit(int(self.running_status))
             self.dist_signal.emit(float(self.achieved_distance))
             self.time_signal.emit(float(self.remaining_time))
+            self.image_signal.emit(self.image)
 
         try:
             print("LoopMonitor: Trying to pause Simulation")
@@ -117,6 +122,9 @@ class LoopMonitor(QObject):
         msg = Bool()
         msg.data = status
         self.start_teleop_pub.publish(msg)
+
+    def image_callback(self, msg):
+        self.image = msg.data
 
     def status_callback(self, msg):
         self.running_status = msg.data

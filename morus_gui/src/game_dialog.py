@@ -29,12 +29,16 @@ class LoopDialog(QDialog):
         self.loop_monitor.status_signal.connect(self.updateGameStatus)
         self.loop_monitor.dist_signal.connect(self.updateDistance)
         self.loop_monitor.time_signal.connect(self.updateTime)
+        self.loop_monitor.image_signal.connect(self.updatePicture)
         
     def __del__(self):
         print("LoopDialog: Destructor called")
-        self.loop_monitor.status_signal.disconnect()
-        self.loop_monitor.dist_signal.disconnect()
-        self.loop_monitor.time_signal.disconnect()
+
+        if self.loop_monitor:
+            self.loop_monitor.status_signal.disconnect()
+            self.loop_monitor.dist_signal.disconnect()
+            self.loop_monitor.time_signal.disconnect()
+            self.loop_monitor.image_signal.disconnect()
 
     def setupCallbacks(self):
         """
@@ -90,12 +94,19 @@ class LoopDialog(QDialog):
 
         self.start_button = QPushButton("Play")
 
+        self.cam_label = QLabel()
+        self.camera_qpix = QPixmap()
+        self.cam_label.setAlignment(Qt.AlignCenter)
+        self.cam_label.setVisible(False)
+
         v_layout = QVBoxLayout()
         v_layout.addWidget(self.info_label)
         v_layout.addLayout(t_layout)
         v_layout.addLayout(d_layout)
+        v_layout.addWidget(self.cam_label)
         v_layout.addWidget(self.start_button)
         v_layout.addLayout(btn_layout)
+
 
         self.setLayout(v_layout)
         self.setGeometry(300, 300, 250, 150)
@@ -117,6 +128,8 @@ class LoopDialog(QDialog):
 
         self.quit_button.setEnabled(False)
         self.quit_button.setVisible(False)
+
+        self.cam_label.setVisible(True)
 
         self.info_label.setText("Game starting...")
         self.loop_monitor.start_node()     
@@ -157,6 +170,15 @@ class LoopDialog(QDialog):
         if key == Qt.Key_Escape:
             # Don't close on escape
             pass
+
+    @pyqtSlot(bytes)
+    def updatePicture(self, arg1):
+        print("LoopDialog: update picture called")
+        check = self.camera_qpix.loadFromData(bytes(arg1))
+        print("LoopDialog: camera qpix conversion success ? {}".format(check))
+        self.cam_label.setPixmap(self.camera_qpix)
+
+        self.refresh_ui()
 
     @pyqtSlot(float)
     def updateDistance(self, arg1):
