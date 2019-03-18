@@ -32,8 +32,8 @@ class MorusGUI(QWidget):
         self.setupUI()
         self.setupCallbacks()
         self.current_state = UIState.NO_USER
-        self.score_tracker = ScoreTracker()
         self.current_user = None
+        self.score_tracker = ScoreTracker()
         self.loop_monitor = LoopMonitor()
 
     def setupCallbacks(self):
@@ -153,7 +153,7 @@ class MorusGUI(QWidget):
         self.start_button.setEnabled(enable)
         self.start_button.setVisible(enable)
 
-        self.stop_button.setEnabled(enable)
+        self.stop_button.setEnabled(not enable)
         self.stop_button.setVisible(enable)
 
     def start_btn_callback(self):
@@ -180,8 +180,15 @@ class MorusGUI(QWidget):
         self.setEnabled(False)
 
         if loop_dialog.exec_():
-            # Record score from here
-            pass
+            self.score_tracker.update_score(
+                self.current_user, loop_dialog.final_score)
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("Score updated")
+            msg.setInformativeText("Saving score {0} to user {1}".format(
+                loop_dialog.final_score, self.current_user))
+            msg.setWindowTitle("Info message")
+            msg.exec_()
 
         del loop_dialog
         self.stop_btn_callback()

@@ -24,6 +24,9 @@ class LoopMonitor(QObject):
     dist_signal = pyqtSignal(float)
     time_signal = pyqtSignal(float)
 
+    DIST_FACTOR = 10
+    TIME_FACTOR = 0.05
+
     def __init__(self):
         super(self.__class__, self).__init__()
         """
@@ -32,7 +35,8 @@ class LoopMonitor(QObject):
         """
         print("LoopMonitor: Inside loop monitor constructor")
         self.external_enable = True
-
+        self.final_score = 0
+        
         rospy.init_node("game_monitor")
         self.start_teleop_pub = rospy.Publisher("/game_loop/teleop_status", Bool, queue_size=1)
         rospy.Subscriber("/game_loop/running", Int8, self.status_callback)
@@ -45,9 +49,10 @@ class LoopMonitor(QObject):
         """
 
         self.running_status = -1
-        self.achieved_distance = -1
-        self.remaining_time = -1
+        self.achieved_distance = 0
+        self.remaining_time = 0
         self.external_enable = True
+        self.final_score = 0
 
     def start_node(self):
         """
@@ -69,12 +74,9 @@ class LoopMonitor(QObject):
 
             rospy.sleep(0.01)
             self.publish_teleop_status(True)
-            print("LoopMonitor: Hello from loop")
             self.status_signal.emit(int(self.running_status))
             self.dist_signal.emit(float(self.achieved_distance))
             self.time_signal.emit(float(self.remaining_time))
-
-            print("\n\n")
 
         try:
             print("LoopMonitor: Trying to pause Simulation")
@@ -83,11 +85,24 @@ class LoopMonitor(QObject):
         except: 
             print("LoopMonitor: Unable to pause Gazebo simulation")
 
+        self.calculate_final_score()
         self.publish_teleop_status(False)
         print("LoopMonitor: Node finished")
         #rospy.signal_shutdown("LoopMonitor shutting down")
 
    
+    def calculate_final_score(self):
+        """
+        Calculate final score.
+        """
+
+        self.final_score = int(
+            LoopMonitor.DIST_FACTOR * self.achieved_distance + 
+            LoopMonitor.TIME_FACTOR * self.remaining_time)
+
+        print("LoopMonitor: Score achieved is {}".format(self.final_score))
+
+
     def stop_node(self):
         """
         Perform all actions requiref dor stoping the node
@@ -107,7 +122,6 @@ class LoopMonitor(QObject):
         self.running_status = msg.data
 
     def distance_callback(self, msg):
-        print("LoopMonitor: Hello from callback")
         self.achieved_distance = msg.data
 
     def time_callback(self, msg):

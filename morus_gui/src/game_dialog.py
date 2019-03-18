@@ -18,7 +18,7 @@ class LoopDialog(QDialog):
 
     NOT_RUNNING_MSG = "Move the UAV to start the game"
     RUNNING_MSG = "Game started. Good luck!"
-    FINISHED_MSG = "Game Over!"
+    FINISHED_MSG = "Game Over! Score: {}"
     
     def __init__(self, loop_monitor):
         super(self.__class__, self).__init__()
@@ -127,6 +127,7 @@ class LoopDialog(QDialog):
         """
 
         self.loop_monitor.stop_node()
+        self.final_score = self.loop_monitor.final_score
         self.accept()
 
     def quit_btn_callback(self):
@@ -134,7 +135,17 @@ class LoopDialog(QDialog):
         Close the game.
         """
 
+        # The QWidget widget is the base class of all user interface objects in PyQt4.
+        w = QWidget()
+        result = QMessageBox.question(
+            w, 'Message', 
+            "Are you sure you want to quit? Score will not be saved.", 
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if result == QMessageBox.No:
+            return 
+
         self.loop_monitor.stop_node()
+        self.final_score = 0
         self.close()
 
     def keyPressEvent(self, event):
@@ -149,19 +160,24 @@ class LoopDialog(QDialog):
 
     @pyqtSlot(float)
     def updateDistance(self, arg1):
-        # print("LoopDialog: Update distance")
-        self.dist_label.setText("{0:.2f} m".format(arg1))
+        if self.loop_monitor.running_status <= LoopMonitor.NOT_RUNNING:
+            self.dist_label.setText("Waiting to start...")
+        else:
+            self.dist_label.setText("{0:.2f} m".format(arg1))
+
         self.refresh_ui()
 
     @pyqtSlot(float)
     def updateTime(self, arg1):
-        print("LoopDialog: Update time")
-        self.remaining_time_label.setText("{0:.2f} s".format(arg1))
+        if self.loop_monitor.running_status <= LoopMonitor.NOT_RUNNING:
+            self.remaining_time_label.setText("Wait...")
+        else:
+            self.remaining_time_label.setText("{0:.2f} s".format(arg1))
+
         self.refresh_ui()
 
     @pyqtSlot(int)
     def updateGameStatus(self, arg1):
-        # print("LoopDialog: Update Game")
         if arg1 == LoopMonitor.NOT_RUNNING:
             self.info_label.setText(LoopDialog.NOT_RUNNING_MSG)
 
@@ -169,7 +185,9 @@ class LoopDialog(QDialog):
             self.info_label.setText(LoopDialog.RUNNING_MSG)
 
         elif arg1 == LoopMonitor.FINISHED:
-            self.info_label.setText(LoopDialog.FINISHED_MSG)
+            self.loop_monitor.calculate_final_score()
+            self.info_label.setText(
+                LoopDialog.FINISHED_MSG.format(self.loop_monitor.final_score))
             self.record_button.setEnabled(True)
             self.record_button.setVisible(True)
 
@@ -183,6 +201,7 @@ class LoopDialog(QDialog):
         Refresh the UI elements by repainting and adjusting size.
         """
 
+        self.update()
         self.repaint()
         self.adjustSize()
     
