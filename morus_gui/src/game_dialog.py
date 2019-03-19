@@ -24,15 +24,23 @@ class LoopDialog(QDialog):
         super(self.__class__, self).__init__()
         self.setupUI()
         self.setupCallbacks()
+        self.setAttribute(Qt.WA_DeleteOnClose)
 
         self.loop_monitor = loop_monitor
         self.loop_monitor.status_signal.connect(self.updateGameStatus)
         self.loop_monitor.dist_signal.connect(self.updateDistance)
         self.loop_monitor.time_signal.connect(self.updateTime)
         self.loop_monitor.image_signal.connect(self.updatePicture)
+
+        self.loop_thread = False
         
     def __del__(self):
         print("LoopDialog: Destructor called")
+
+        if self.loop_thread and self.loop_monitor:
+            print("LoopDialog: Stopping loop monitors")
+            self.loop_thread.quit()
+            self.loop_thread.wait()
 
         if self.loop_monitor:
             self.loop_monitor.status_signal.disconnect()
@@ -40,9 +48,6 @@ class LoopDialog(QDialog):
             self.loop_monitor.time_signal.disconnect()
             self.loop_monitor.image_signal.disconnect()
 
-        if self.loop_thread:
-            self.loop_thread.quit()
-            self.loop_thread.wait()
 
     def setupCallbacks(self):
         """
