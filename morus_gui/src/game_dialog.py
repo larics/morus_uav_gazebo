@@ -40,6 +40,10 @@ class LoopDialog(QDialog):
             self.loop_monitor.time_signal.disconnect()
             self.loop_monitor.image_signal.disconnect()
 
+        if self.loop_thread:
+            self.loop_thread.quit()
+            self.loop_thread.wait()
+
     def setupCallbacks(self):
         """
         Setup all callbacks for UI elements.
@@ -126,13 +130,14 @@ class LoopDialog(QDialog):
         self.start_button.setEnabled(False)
         self.start_button.setVisible(False)
 
-        self.quit_button.setEnabled(False)
-        self.quit_button.setVisible(False)
 
         self.cam_label.setVisible(True)
-
         self.info_label.setText("Game starting...")
-        self.loop_monitor.start_node()     
+        
+        self.loop_thread = QThread()
+        self.loop_monitor.moveToThread(self.loop_thread)
+        self.loop_thread.started.connect(self.loop_monitor.start_node)
+        self.loop_thread.start()
 
     def record_btn_callback(self):
         """

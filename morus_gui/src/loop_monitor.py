@@ -29,7 +29,7 @@ class LoopMonitor(QObject):
     DIST_FACTOR = 10
     TIME_FACTOR = 0.05
 
-    def __init__(self):
+    def __init__(self, main_thread):
         super(self.__class__, self).__init__()
         """
         Initialize all the signals for this thread. Communication to outside
@@ -38,6 +38,7 @@ class LoopMonitor(QObject):
         print("LoopMonitor: Inside loop monitor constructor")
         self.external_enable = True
         self.final_score = 0
+        self.main_thread = main_thread
         
         rospy.init_node("game_monitor")
         self.start_teleop_pub = rospy.Publisher("/game_loop/teleop_status", Bool, queue_size=1)
@@ -93,7 +94,9 @@ class LoopMonitor(QObject):
         self.calculate_final_score()
         self.publish_teleop_status(False)
         print("LoopMonitor: Node finished")
-        #rospy.signal_shutdown("LoopMonitor shutting down")
+        
+        # Move back to main thread
+        self.moveToThread(self.main_thread)
 
    
     def calculate_final_score(self):

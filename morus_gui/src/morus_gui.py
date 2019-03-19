@@ -35,7 +35,7 @@ class MorusGUI(QWidget):
         self.current_state = UIState.NO_USER
         self.current_user = None
         self.score_tracker = ScoreTracker()
-        self.loop_monitor = LoopMonitor()
+        self.loop_monitor = LoopMonitor(QThread.currentThread())
 
     def setupCallbacks(self):
         """
