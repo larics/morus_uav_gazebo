@@ -276,6 +276,7 @@ if __name__ == '__main__':
 
     print("GameNode: Game finished")
     counter = 0
-    while counter < 20 and not rospy.is_shutdown():
+    while counter < 30 and not rospy.is_shutdown():
         game_node.pub_game_status(GameNode.FINISHED)
+        print("Publish finished signal")
         rospy.sleep(0.1)

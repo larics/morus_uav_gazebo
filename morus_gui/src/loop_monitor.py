@@ -118,6 +118,9 @@ class LoopMonitor(QObject):
             self.time_signal.emit(float(self.remaining_time))
             self.image_signal.emit(self.image)
 
+
+        
+        self.emitFinished()
         try:
             print("LoopMonitor: Trying to pause Simulation")
             service_call = rospy.ServiceProxy("/gazebo/pause_physics", Empty)
@@ -132,7 +135,15 @@ class LoopMonitor(QObject):
         # Move back to main thread
         self.moveToThread(self.main_thread)
 
-   
+
+    def emitFinished(self):
+        count = 0
+        while count < 20:
+            print("LoopMonitor: Emitting finshed signal")
+            count += 1
+            self.status_signal.emit(
+                int(LoopMonitor.FINISHED))
+
     def calculate_final_score(self):
         """
         Calculate final score.
@@ -157,8 +168,7 @@ class LoopMonitor(QObject):
 
         print("LoopMonitor: Stopping loop_monitor node")
         self.external_enable = False
-        self.status_signal.emit(
-            int(LoopMonitor.FINISHED))
+        self.emitFinished()
 
     def publish_teleop_status(self, status):
         msg = Bool()
