@@ -4,6 +4,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 import rospy
+import rospkg
+import yaml
 from std_msgs.msg import Int8, Float64, Bool
 from std_srvs.srv import Empty
 from sensor_msgs.msg import CompressedImage
@@ -46,6 +48,38 @@ class LoopMonitor(QObject):
         rospy.Subscriber("/game_loop/distance", Float64, self.distance_callback)
         rospy.Subscriber("/game_loop/remaining_time", Float64, self.time_callback)
         rospy.Subscriber("/morus/camera1/image_raw/compressed", CompressedImage, self.image_callback)
+
+        self.initialize_config()
+
+    def initialize_config(self):
+        """
+        Initialize config parameters
+        """
+
+        # Initialize factors
+        rospack = rospkg.RosPack()
+        path = rospack.get_path("morus_gui")
+        file_path = path + "/config/game.config.yaml"
+        with open(file_path) as f:
+            self.config = yaml.load(f)
+             
+            LoopMonitor.DIST_FACTOR = self.configGet("DIST_FACTOR", LoopMonitor.DIST_FACTOR)
+            LoopMonitor.TIME_FACTOR = self.configGet("TIME_FACTOR", LoopMonitor.TIME_FACTOR)
+
+            print("\n\n")
+            print("Distance factor: {}".format(LoopMonitor.DIST_FACTOR))
+            print("Time factor: {}".format(LoopMonitor.TIME_FACTOR))
+            print("\n\n")
+
+    def configGet(self, key, default):
+        value = -1
+        try:
+            value = self.config[key]
+        except:
+            value = default
+            print("{} value is not found in config file.".format(key))
+
+        return value
 
     def initialize_node(self):
         """

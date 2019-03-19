@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 
 import rospy
+import rospkg
+import yaml
+
 from geometry_msgs.msg import PointStamped
 from std_msgs.msg import Float64, Int8, Bool
 from std_srvs.srv import Empty
@@ -64,6 +67,51 @@ class GameNode():
         self.game_status = rospy.Publisher("game_loop/running", Int8, queue_size=1) 
         self.distance_pub = rospy.Publisher("game_loop/distance", Float64, queue_size=1)
         self.time_pub = rospy.Publisher("game_loop/remaining_time", Float64, queue_size=1)
+
+        self.initialize_config()
+
+    def initialize_config(self):
+        """
+        Initialize config variables.
+        """
+        
+        # Initialize factors
+        rospack = rospkg.RosPack()
+        path = rospack.get_path("morus_gui")
+        file_path = path + "/config/game.config.yaml"
+        with open(file_path) as f:
+            self.config = yaml.load(f)
+            
+            GameNode.TARGET_X = self.configGet("TARGET_X", GameNode.TARGET_X)
+            GameNode.TARGET_Y = self.configGet("TARGET_Y", GameNode.TARGET_Y)
+            GameNode.INIT_TOL = self.configGet("INIT_TOL", GameNode.INIT_TOL)
+            GameNode.TARGET_TOL = self.configGet("TARGET_TOL", GameNode.TARGET_TOL)
+            GameNode.MAX_ANGULAR_VEL = self.configGet("MAX_ANGULAR_VEL", GameNode.MAX_ANGULAR_VEL)
+            GameNode.MAX_LINEAR_VEL = self.configGet("MAX_LINEAR_VEL", GameNode.MAX_LINEAR_VEL)
+            GameNode.TOTAL_TIME = self.configGet("TOTAL_TIME", GameNode.TOTAL_TIME)
+
+            print("\n\n")
+
+            print("Target x-pos: {}".format(GameNode.TARGET_X))
+            print("Target y-pos: {}".format(GameNode.TARGET_Y))
+            print("Initial position tolerance:: {}".format(GameNode.INIT_TOL))
+            print("Target position tolerance: {}".format(GameNode.TARGET_TOL))
+            print("Maximum angular velocity: {}".format(GameNode.MAX_ANGULAR_VEL))
+            print("Maximum linear velocity: {}".format(GameNode.MAX_LINEAR_VEL))
+            print("Total game time: {}".format(GameNode.TOTAL_TIME))
+
+            print("\n\n")
+
+
+    def configGet(self, key, default):
+        value = -1
+        try:
+            value = self.config[key]
+        except:
+            value = default
+            print("{} value is not found in config file.".format(key))
+
+        return value
 
     def checkIfMoving(self):
         """
