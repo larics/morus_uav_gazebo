@@ -173,9 +173,7 @@ class LoopDialog(QDialog):
 
     @pyqtSlot(bytes)
     def updatePicture(self, arg1):
-        print("LoopDialog: update picture called")
         check = self.camera_qpix.loadFromData(bytes(arg1))
-        print("LoopDialog: camera qpix conversion success ? {}".format(check))
         self.cam_label.setPixmap(self.camera_qpix)
 
         self.refresh_ui()
