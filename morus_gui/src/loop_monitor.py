@@ -31,6 +31,8 @@ class LoopMonitor(QObject):
     DIST_FACTOR = 10
     TIME_FACTOR = 0.05
 
+    TOTAL_TIME = 300
+
     def __init__(self, main_thread):
         super(self.__class__, self).__init__()
         """
@@ -65,10 +67,13 @@ class LoopMonitor(QObject):
              
             LoopMonitor.DIST_FACTOR = self.configGet("DIST_FACTOR", LoopMonitor.DIST_FACTOR)
             LoopMonitor.TIME_FACTOR = self.configGet("TIME_FACTOR", LoopMonitor.TIME_FACTOR)
+            LoopMonitor.TOTAL_TIME = self.configGet("TOTAL_TIME", LoopMonitor.TOTAL_TIME)
 
             print("\n\n")
             print("Distance factor: {}".format(LoopMonitor.DIST_FACTOR))
             print("Time factor: {}".format(LoopMonitor.TIME_FACTOR))
+            print("Total time: {}".format(LoopMonitor.TOTAL_TIME))
+
             print("\n\n")
 
     def configGet(self, key, default):
@@ -156,7 +161,8 @@ class LoopMonitor(QObject):
 
         self.final_score = int(
             LoopMonitor.DIST_FACTOR * self.achieved_distance + 
-            LoopMonitor.TIME_FACTOR * self.remaining_time)
+            LoopMonitor.TIME_FACTOR * (
+                self.remaining_time - LoopMonitor.TOTAL_TIME))
 
         print("LoopMonitor: Score achieved is {}".format(self.final_score))
 

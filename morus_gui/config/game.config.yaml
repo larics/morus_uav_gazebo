@@ -1,9 +1,9 @@
 
 # Distance factor which multiplies the achieved distance when scoring
-DIST_FACTOR: 1
+DIST_FACTOR: 18.181818
 
 # Time factor which multiplies the remaining time when scoring
-TIME_FACTOR: 0.1
+TIME_FACTOR: 1
 
 # Target position - x coordinate
 TARGET_X: -17.2652
