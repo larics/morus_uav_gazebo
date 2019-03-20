@@ -322,7 +322,7 @@
         <update_rate>30.0</update_rate>
 
         <camera name="head">
-          <horizontal_fov>1.3962634</horizontal_fov>
+          <horizontal_fov>1.5</horizontal_fov>
           <image>
             <width>800</width>
             <height>800</height>
@@ -335,7 +335,7 @@
           <noise>
             <type>gaussian</type>
             <mean>0.0</mean>
-            <stddev>0.007</stddev>
+            <stddev>0.01</stddev>
           </noise>
         </camera>
 
