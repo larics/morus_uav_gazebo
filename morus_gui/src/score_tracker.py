@@ -95,7 +95,6 @@ class ScoreTracker():
         for i in range(len(self.scoring_list)):
 
             if self.scoring_list[i][ScoreTracker.NICK_KEY] == nick:
-                
                 print("Found nick: Updating score")
                 current_value = self.scoring_list[i][ScoreTracker.SCORE_KEY]
                 current_time = self.scoring_list[i][ScoreTracker.TIME_KEY]

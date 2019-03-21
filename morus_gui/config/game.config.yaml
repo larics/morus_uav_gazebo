@@ -23,7 +23,7 @@ TARGET_TOL: 0.5
 MAX_ANGULAR_VEL: 13.5
 
 # Maximum linear velocity user can achieve before game stops
-MAX_LINEAR_VEL: 8
+MAX_LINEAR_VEL: 10
 
 # Total game time
 TOTAL_TIME: 300
