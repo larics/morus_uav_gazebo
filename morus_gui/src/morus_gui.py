@@ -37,6 +37,8 @@ class MorusGUI(QWidget):
         self.score_tracker = ScoreTracker()
         self.loop_monitor = LoopMonitor(QThread.currentThread())
 
+        self.score_tracker.update_score(
+            "lmark", 2000, 150)
     def setupCallbacks(self):
         """
         Setup all needed callbacks for GUI objects.
@@ -193,12 +195,14 @@ class MorusGUI(QWidget):
 
         if loop_dialog.exec_():
             self.score_tracker.update_score(
-                self.current_user, loop_dialog.final_score)
+                self.current_user, 
+                loop_dialog.final_score,
+                loop_dialog.final_time)
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Information)
             msg.setText("Score updated")
-            msg.setInformativeText("Saving score {0} to user {1}".format(
-                loop_dialog.final_score, self.current_user))
+            msg.setInformativeText("Player {0} achieved score {1} in time {2}".format(
+                self.current_user, loop_dialog.final_score, loop_dialog.final_time))
             msg.setWindowTitle("Info message")
             msg.exec_()
 

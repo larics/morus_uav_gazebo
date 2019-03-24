@@ -42,6 +42,7 @@ class LoopMonitor(QObject):
         print("LoopMonitor: Inside loop monitor constructor")
         self.external_enable = True
         self.final_score = 0
+        self.final_time = 0
         self.main_thread = main_thread
         
         rospy.init_node("game_monitor")
@@ -96,7 +97,9 @@ class LoopMonitor(QObject):
         self.achieved_distance = 0
         self.remaining_time = 0
         self.external_enable = True
+        
         self.final_score = 0
+        self.final_time = 0
 
     def start_node(self):
         """
@@ -123,8 +126,6 @@ class LoopMonitor(QObject):
             self.time_signal.emit(float(self.remaining_time))
             self.image_signal.emit(self.image)
 
-
-        
         self.emitFinished()
         try:
             print("LoopMonitor: Trying to pause Simulation")
@@ -156,13 +157,12 @@ class LoopMonitor(QObject):
 
         if not self.running_status == LoopMonitor.FINISHED:
             self.final_score = 0
+            self.final_time = 0
             print("LoopMonitor: No score recorded.")
             return
 
-        self.final_score = int(
-            LoopMonitor.DIST_FACTOR * self.achieved_distance + 
-            LoopMonitor.TIME_FACTOR * (
-                self.remaining_time - LoopMonitor.TOTAL_TIME))
+        self.final_score = int(self.achieved_distance * 1000)
+        self.final_time = int(self.remaining_time * 10)
 
         print("LoopMonitor: Score achieved is {}".format(self.final_score))
 

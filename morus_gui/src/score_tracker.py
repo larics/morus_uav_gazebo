@@ -12,6 +12,7 @@ class ScoreTracker():
     FNAME_KEY = "fname"
     LNAME_KEY = "lname"
     SCORE_KEY = "score"
+    TIME_KEY = "time"
 
     def __init__(self):
         """
@@ -64,7 +65,8 @@ class ScoreTracker():
             ScoreTracker.NICK_KEY : nick,
             ScoreTracker.FNAME_KEY : fname,
             ScoreTracker.LNAME_KEY : lname,
-            ScoreTracker.SCORE_KEY : -1
+            ScoreTracker.SCORE_KEY : -1,
+            ScoreTracker.TIME_KEY  : -1
             })
 
         
@@ -81,7 +83,7 @@ class ScoreTracker():
         with open(self.file_path, "w") as f:
             yaml.dump(self.scoring_list, f)
 
-    def update_score(self, nick, score):
+    def update_score(self, nick, score, time):
         """
         Update score for the given nickname.
         """
@@ -90,7 +92,23 @@ class ScoreTracker():
         for i in range(len(self.scoring_list)):
 
             if self.scoring_list[i][ScoreTracker.NICK_KEY] == nick:
-                self.scoring_list[i][ScoreTracker.SCORE_KEY] = score
+                
+                print("found nick")
+                current_value = self.scoring_list[i][ScoreTracker.SCORE_KEY]
+                current_time = self.scoring_list[i][ScoreTracker.TIME_KEY]
+                # User is found - check if score needs to be updated
+                
+                if current_value < score:
+                    # Score needs to be updated
+                    print("ScoreTracker: Saving score and time for user {}".format(nick))
+                    self.scoring_list[i][ScoreTracker.SCORE_KEY] = score
+                    self.scoring_list[i][ScoreTracker.TIME_KEY] = time
+
+                elif current_value == score and current_time < time:
+                    # Time needs to be updated
+                    print("ScoreTracker: Saving only time for user {}".format(nick))
+                    self.scoring_list[i][ScoreTracker.TIME_KEY] = time
+
                 updated = True
                 break
 
@@ -99,12 +117,15 @@ class ScoreTracker():
 
         self.write_yaml()
 
+    def my_key(self, x):
+        return x[ScoreTracker.SCORE_KEY], x[ScoreTracker.TIME_KEY]
+
     def get_sorted_score(self):
         """
         Return a sorted list of dictionary entries.
         """
 
-        return sorted(self.scoring_list, key= lambda k : k[ScoreTracker.SCORE_KEY], reverse=True)
+        return sorted(self.scoring_list, key=self.my_key, reverse=True)
 
     def get_user_list(self):
         """

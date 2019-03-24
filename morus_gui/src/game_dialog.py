@@ -151,6 +151,7 @@ class LoopDialog(QDialog):
 
         self.loop_monitor.stop_node()
         self.final_score = self.loop_monitor.final_score
+        self.final_time = self.loop_monitor.final_time
         self.accept()
 
     def quit_btn_callback(self):
@@ -169,6 +170,7 @@ class LoopDialog(QDialog):
 
         self.loop_monitor.stop_node()
         self.final_score = 0
+        self.final_time = 0
         self.close()
 
     def keyPressEvent(self, event):

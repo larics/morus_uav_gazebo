@@ -26,10 +26,22 @@ class HighscoreDialog(QDialog):
         scroll_area = QScrollArea()
         self.scroll_layout = QVBoxLayout()
         scroll_area.setLayout(self.scroll_layout)
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setFixedWidth(400)
 
+        start_item = {
+            ScoreTracker.NICK_KEY   : "NAME",
+            ScoreTracker.FNAME_KEY  : "-",
+            ScoreTracker.LNAME_KEY  : "-",
+            ScoreTracker.SCORE_KEY  : "SCORE",
+            ScoreTracker.TIME_KEY   : "TIME"
+        }
+
+        self.scroll_layout.addLayout(
+            self.makeHorizontalLayout("", start_item))
         for i, item in enumerate(self.sorted_scores):
             print(item)
-            h_layout = self.makeHorizontalLayout(i, item)
+            h_layout = self.makeHorizontalLayout(i+1, item)
             self.scroll_layout.addLayout(h_layout)
 
         v_layout = QVBoxLayout()
@@ -37,20 +49,19 @@ class HighscoreDialog(QDialog):
         v_layout.addWidget(scroll_area)
 
         self.setLayout(v_layout)
-        self.adjustSize()
         self.setWindowTitle("Highscores")
-
         self.show()
-        self.scroll_layout.addStretch()
+        self.adjustSize()
 
     def makeHorizontalLayout(self, index, item):
         """
         Return a horizontal layout containing give score.
         """
+        print(item)
 
         left_label = QLabel()
         left_label.setText("{0}. {1}".format(
-            index+1, item[ScoreTracker.NICK_KEY]))
+            index, item[ScoreTracker.NICK_KEY]))
         left_label.setFixedWidth(100)
 
         right_label = QLabel()
@@ -58,9 +69,15 @@ class HighscoreDialog(QDialog):
             item[ScoreTracker.SCORE_KEY]))
         right_label.setFixedWidth(100)
         
+        time_label = QLabel()
+        time_label.setText("{0}".format(
+            item[ScoreTracker.TIME_KEY]))
+        time_label.setFixedWidth(100)
+
         layout = QHBoxLayout()
         layout.addWidget(left_label)
         layout.addWidget(right_label)
+        layout.addWidget(time_label)
         layout.setSpacing(120)
         layout.setAlignment(Qt.AlignTop)
 
