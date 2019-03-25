@@ -1514,6 +1514,10 @@
         <pose frame=''>-7.91099 51.3882 100.246 0 1.1578 -1.68855</pose>
         <view_controller>orbit</view_controller>
         <projection_type>perspective</projection_type>
+        <track_visual>
+          <name>morus</name>
+          <min_dist>1</min_dist>
+        </track_visual>
       </camera>
     </gui>
     <model name='asphalt_plane_0'>
