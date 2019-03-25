@@ -1,9 +1,9 @@
 
 # Distance factor which multiplies the achieved distance when scoring
-DIST_FACTOR: 18.181818
+DIST_FACTOR: 10
 
 # Time factor which multiplies the remaining time when scoring
-TIME_FACTOR: 1
+TIME_FACTOR: 100
 
 # Target position - x coordinate
 TARGET_X: -17.2652
@@ -17,7 +17,7 @@ INIT_TOL: 0.5
 
 # Target position tolerance
 # User has to be within TARGET_TOL meters in order to finish the game
-TARGET_TOL: 3
+TARGET_TOL: 0.5
 
 # Maximum angular velocity user can achieve before game stops
 MAX_ANGULAR_VEL: 13.5

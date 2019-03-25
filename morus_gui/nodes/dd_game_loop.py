@@ -30,7 +30,7 @@ class GameNode():
 
     # Position tolerances
     INIT_TOL = 0.5
-    TARGET_TOL = 3
+    TARGET_TOL = 0.5
 
     # Max velocities before stopping simulation
     MAX_ANGULAR_VEL = 13.5
@@ -91,7 +91,6 @@ class GameNode():
             GameNode.TOTAL_TIME = self.configGet("TOTAL_TIME", GameNode.TOTAL_TIME)
 
             print("\n\n")
-
             print("Target x-pos: {}".format(GameNode.TARGET_X))
             print("Target y-pos: {}".format(GameNode.TARGET_Y))
             print("Initial position tolerance:: {}".format(GameNode.INIT_TOL))
@@ -99,7 +98,6 @@ class GameNode():
             print("Maximum angular velocity: {}".format(GameNode.MAX_ANGULAR_VEL))
             print("Maximum linear velocity: {}".format(GameNode.MAX_LINEAR_VEL))
             print("Total game time: {}".format(GameNode.TOTAL_TIME))
-
             print("\n\n")
 
 
