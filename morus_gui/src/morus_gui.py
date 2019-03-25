@@ -37,8 +37,6 @@ class MorusGUI(QWidget):
         self.score_tracker = ScoreTracker()
         self.loop_monitor = LoopMonitor(QThread.currentThread())
 
-        self.score_tracker.update_score(
-            "lmark", 2000, 150)
     def setupCallbacks(self):
         """
         Setup all needed callbacks for GUI objects.

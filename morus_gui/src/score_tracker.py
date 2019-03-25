@@ -93,7 +93,7 @@ class ScoreTracker():
 
             if self.scoring_list[i][ScoreTracker.NICK_KEY] == nick:
                 
-                print("found nick")
+                print("Found nick: Updating score")
                 current_value = self.scoring_list[i][ScoreTracker.SCORE_KEY]
                 current_time = self.scoring_list[i][ScoreTracker.TIME_KEY]
                 # User is found - check if score needs to be updated

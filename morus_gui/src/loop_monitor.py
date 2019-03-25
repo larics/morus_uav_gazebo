@@ -161,8 +161,8 @@ class LoopMonitor(QObject):
             print("LoopMonitor: No score recorded.")
             return
 
-        self.final_score = int(self.achieved_distance * 1000)
-        self.final_time = int(self.remaining_time * 10)
+        self.final_score = int(self.achieved_distance * LoopMonitor.DIST_FACTOR)
+        self.final_time = int(self.remaining_time * LoopMonitor.TIME_FACTOR)
 
         print("LoopMonitor: Score achieved is {}".format(self.final_score))
 

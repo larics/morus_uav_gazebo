@@ -40,7 +40,6 @@ class HighscoreDialog(QDialog):
         self.scroll_layout.addLayout(
             self.makeHorizontalLayout("", start_item))
         for i, item in enumerate(self.sorted_scores):
-            print(item)
             h_layout = self.makeHorizontalLayout(i+1, item)
             self.scroll_layout.addLayout(h_layout)
 
