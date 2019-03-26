@@ -53,8 +53,8 @@ class RegisterUser(QDialog):
         """
 
         self.h_layout_nick = self.get_label_edit_layout("Enter nickname: ")
-        self.h_layout_fname = self.get_label_edit_layout("Enter first name: ")
-        self.h_layout_lname = self.get_label_edit_layout("Enter last name: ")
+        self.h_layout_fname = self.get_label_edit_layout("Enter name: ")
+        self.h_layout_lname = self.get_label_edit_layout("Enter e-mail: ")
 
         # Create a button layout
         self.ok_button = QPushButton("OK")
