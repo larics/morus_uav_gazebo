@@ -88,6 +88,9 @@ class ScoreTracker():
         Update score for the given nickname.
         """
         
+        if score > 579:
+            score = 579
+
         updated = False
         for i in range(len(self.scoring_list)):
 
@@ -125,7 +128,7 @@ class ScoreTracker():
         Return a sorted list of dictionary entries.
         """
 
-        return sorted(self.scoring_list, key=self.my_key, reverse=True)
+        return sorted(self.scoring_list, key=self.my_key, reverse=True)[0:20]
 
     def get_user_list(self):
         """

@@ -28,6 +28,7 @@ class HighscoreDialog(QDialog):
         scroll_area.setLayout(self.scroll_layout)
         scroll_area.setWidgetResizable(True)
         scroll_area.setFixedWidth(400)
+        scroll_area.setFixedHeight(600)
 
         start_item = {
             ScoreTracker.NICK_KEY   : "NAME",
